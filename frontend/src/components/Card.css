@@ -1,0 +1,180 @@
+/* ============================================================================
+   CARD COMPONENT STYLES
+   ============================================================================ */
+
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+
+  /* Default variant */
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+
+.card:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================================
+   VARIANTS
+   ============================================================================ */
+
+/* Default - Subtle border and shadow */
+.card-default {
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+
+.card-default:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-base);
+}
+
+/* Elevated - No border, elevated shadow */
+.card-elevated {
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+.card-elevated:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Ghost - Minimal, background only */
+.card-ghost {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  box-shadow: none;
+}
+
+.card-ghost:hover {
+  background-color: var(--color-neutral-50);
+}
+
+.dark .card-ghost {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dark .card-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================================
+   PADDING VARIANTS
+   ============================================================================ */
+
+.card-padding-sm {
+  padding: var(--spacing-3);
+}
+
+.card-padding-md {
+  padding: var(--spacing-6);
+}
+
+.card-padding-lg {
+  padding: var(--spacing-8);
+}
+
+/* ============================================================================
+   CARD SECTIONS
+   ============================================================================ */
+
+.card-header {
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.card-header h2,
+.card-header h3,
+.card-header h4 {
+  margin: 0;
+  flex: 1;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.card-footer {
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: flex-end;
+}
+
+.card-footer:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+.dark .card {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.dark .card-default {
+  border-color: var(--color-border);
+}
+
+.dark .card-default:hover {
+  border-color: rgba(79, 70, 229, 0.4);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dark .card-elevated {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dark .card-elevated:hover {
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 767px) {
+  .card-padding-lg {
+    padding: var(--spacing-6);
+  }
+
+  .card-padding-md {
+    padding: var(--spacing-4);
+  }
+
+  .card-header,
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-footer {
+    justify-content: stretch;
+  }
+
+  .card-footer button {
+    width: 100%;
+  }
+}

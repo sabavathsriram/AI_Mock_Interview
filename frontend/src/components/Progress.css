@@ -1,0 +1,96 @@
+/* ============================================================================
+   PROGRESS COMPONENT STYLES
+   ============================================================================ */
+
+.progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  width: 100%;
+}
+
+.progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.progress-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.progress-percent {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================================
+   PROGRESS BAR
+   ============================================================================ */
+
+.progress {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-neutral-200);
+  overflow: hidden;
+}
+
+.dark .progress {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-600);
+  transition: width var(--transition-slow);
+}
+
+/* ============================================================================
+   COLOR VARIANTS
+   ============================================================================ */
+
+.progress-primary .progress-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-600) 0%,
+    var(--color-primary-500) 100%
+  );
+}
+
+.progress-success .progress-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-success-600) 0%,
+    var(--color-success-500) 100%
+  );
+}
+
+.progress-warning .progress-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-warning-600) 0%,
+    var(--color-warning-500) 100%
+  );
+}
+
+.progress-error .progress-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-error-600) 0%,
+    var(--color-error-500) 100%
+  );
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 767px) {
+  .progress {
+    height: 6px;
+  }
+}

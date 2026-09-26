@@ -1,0 +1,633 @@
+/* Resume Analysis Page Styles */
+
+/* Main container */
+.resume-analysis-page {
+  padding: 32px;
+  max-width: 1600px;
+}
+
+/* Back Button */
+.resume-analysis-back {
+  margin-bottom: 24px;
+}
+
+.resume-analysis-back a {
+  text-decoration: none;
+}
+
+/* Page Header */
+.resume-analysis-header {
+  margin-bottom: 32px;
+}
+
+.resume-analysis-header-content h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--color-neutral-900, #171717);
+  margin: 0 0 8px 0;
+}
+
+.dark .resume-analysis-header-content h1 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-header-content p {
+  font-size: 16px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0;
+}
+
+.dark .resume-analysis-header-content p {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+/* Overview Card */
+.resume-analysis-overview {
+  background: linear-gradient(135deg, #f0f7ff 0%, #f0f7ff 100%);
+  border: 1px solid #e0effe;
+  margin-bottom: 32px;
+}
+
+.dark .resume-analysis-overview {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.03) 100%);
+  border-color: rgba(79, 70, 229, 0.2);
+}
+
+.resume-analysis-overview-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resume-analysis-overview-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0;
+}
+
+.dark .resume-analysis-overview-header h2 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.resume-analysis-overview-left h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0 0 12px 0;
+}
+
+.dark .resume-analysis-overview-left h3 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-headline {
+  font-size: 14px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0 0 12px 0;
+}
+
+.dark .resume-analysis-headline {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+.resume-analysis-summary {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0 0 16px 0;
+}
+
+.dark .resume-analysis-summary {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+.resume-analysis-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resume-analysis-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-neutral-600, #4b5563);
+}
+
+.dark .resume-analysis-contact-item {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+.resume-analysis-contact-item svg {
+  flex-shrink: 0;
+}
+
+.resume-analysis-domains {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resume-analysis-domains h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-neutral-700, #374151);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.dark .resume-analysis-domains h4 {
+  color: var(--color-neutral-200, #e5e7eb);
+}
+
+.resume-analysis-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Section Cards */
+.resume-analysis-section {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  margin-bottom: 32px;
+}
+
+.dark .resume-analysis-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.resume-analysis-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resume-analysis-section-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0;
+}
+
+.dark .resume-analysis-section-header h2 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-section-description {
+  font-size: 13px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0 0 16px 0;
+}
+
+.dark .resume-analysis-section-description {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+/* Education */
+.resume-analysis-education-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resume-analysis-education-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-neutral-50, #f9fafb);
+  border-radius: 8px;
+}
+
+.dark .resume-analysis-education-item {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.resume-analysis-education-main h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0 0 4px 0;
+}
+
+.dark .resume-analysis-education-main h4 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-education-main p {
+  font-size: 13px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0;
+}
+
+.dark .resume-analysis-education-main p {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+.resume-analysis-education-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.resume-analysis-year,
+.resume-analysis-gpa {
+  font-size: 13px;
+  color: var(--color-neutral-600, #4b5563);
+}
+
+.dark .resume-analysis-year,
+.dark .resume-analysis-gpa {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+/* Experience */
+.resume-analysis-experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.resume-analysis-experience-item {
+  padding: 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+}
+
+.dark .resume-analysis-experience-item {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.resume-analysis-experience-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.resume-analysis-experience-title h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0 0 4px 0;
+}
+
+.dark .resume-analysis-experience-title h4 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-experience-title p {
+  font-size: 13px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0;
+}
+
+.dark .resume-analysis-experience-title p {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+.resume-analysis-experience-description {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-neutral-600, #4b5563);
+  margin: 0 0 12px 0;
+}
+
+.dark .resume-analysis-experience-description {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+.resume-analysis-achievements {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-analysis-achievement {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.resume-analysis-achievement svg {
+  color: var(--color-success-500, #10b981);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.resume-analysis-achievement span {
+  color: var(--color-neutral-700, #374151);
+}
+
+.dark .resume-analysis-achievement span {
+  color: var(--color-neutral-200, #e5e7eb);
+}
+
+/* Skills Grid */
+.resume-analysis-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.resume-analysis-skill-category h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0 0 12px 0;
+}
+
+.dark .resume-analysis-skill-category h4 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Certifications */
+.resume-analysis-certifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resume-analysis-certification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px;
+  background: var(--color-neutral-50, #f9fafb);
+  border-radius: 8px;
+}
+
+.dark .resume-analysis-certification-item {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.resume-analysis-certification-main h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0 0 4px 0;
+}
+
+.dark .resume-analysis-certification-main h4 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-certification-main p {
+  font-size: 12px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0;
+}
+
+.dark .resume-analysis-certification-main p {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+.resume-analysis-certification-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--color-neutral-600, #4b5563);
+  flex-shrink: 0;
+}
+
+.dark .resume-analysis-certification-dates {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+/* Evidence */
+.resume-analysis-evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resume-analysis-evidence-item {
+  padding: 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+}
+
+.dark .resume-analysis-evidence-item {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.resume-analysis-evidence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.resume-analysis-evidence-item h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 0;
+}
+
+.dark .resume-analysis-evidence-item h4 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.resume-analysis-evidence-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-neutral-600, #4b5563);
+  font-style: italic;
+  margin: 0;
+}
+
+.dark .resume-analysis-evidence-text {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+/* Assessment Grid */
+.resume-analysis-assessment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.resume-analysis-strengths,
+.resume-analysis-gaps {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+}
+
+.dark .resume-analysis-strengths,
+.dark .resume-analysis-gaps {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.resume-analysis-assessment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resume-analysis-assessment-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.resume-analysis-assessment-header.strengths {
+  color: var(--color-success-600, #059669);
+}
+
+.dark .resume-analysis-assessment-header.strengths {
+  color: var(--color-success-400, #4ade80);
+}
+
+.resume-analysis-assessment-header.gaps {
+  color: var(--color-warning-600, #d97706);
+}
+
+.dark .resume-analysis-assessment-header.gaps {
+  color: var(--color-warning-400, #fbbf24);
+}
+
+.resume-analysis-assessment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.resume-analysis-assessment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.resume-analysis-assessment-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.resume-analysis-assessment-item span {
+  color: var(--color-neutral-700, #374151);
+}
+
+.dark .resume-analysis-assessment-item span {
+  color: var(--color-neutral-200, #e5e7eb);
+}
+
+/* Demo Notice */
+.resume-analysis-demo-notice {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.03) 100%);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.dark .resume-analysis-demo-notice {
+  background: rgba(79, 70, 229, 0.1);
+}
+
+.resume-analysis-demo-notice p {
+  font-size: 14px;
+  color: var(--color-primary-700, #3730a3);
+  margin: 0;
+}
+
+.dark .resume-analysis-demo-notice p {
+  color: var(--color-primary-300, #a5b4fc);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .resume-analysis-page {
+    padding: 24px;
+  }
+
+  .resume-analysis-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .resume-analysis-skills-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .resume-analysis-header {
+    margin-bottom: 24px;
+  }
+
+  .resume-analysis-header-content h1 {
+    font-size: 28px;
+  }
+
+  .resume-analysis-education-item,
+  .resume-analysis-certification-item {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .resume-analysis-education-meta,
+  .resume-analysis-certification-dates {
+    text-align: left;
+  }
+
+  .resume-analysis-experience-header {
+    flex-direction: column;
+  }
+
+  .resume-analysis-skills-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .resume-analysis-page {
+    padding: 16px;
+  }
+
+  .resume-analysis-header-content h1 {
+    font-size: 24px;
+  }
+
+  .resume-analysis-evidence-header {
+    flex-direction: column;
+  }
+
+  .resume-analysis-assessment-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,493 @@
+/* ============================================================================
+   GLOBAL STYLES - Base application styling
+   ============================================================================ */
+
+@import './design-system.css';
+@import './reset.css';
+
+/* ============================================================================
+   ROOT & BODY
+   ============================================================================ */
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ============================================================================
+   APPLICATION WRAPPER
+   ============================================================================ */
+
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================================
+   MAIN LAYOUT - Flexbox architecture (prevents overlapping)
+   ============================================================================ */
+
+.app-container {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top Bar - Fixed height, above sidebar */
+.top-bar {
+  height: var(--size-topbar);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-fixed);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-6);
+  gap: var(--spacing-6);
+}
+
+/* Sidebar - Fixed width, no shrinking */
+.sidebar {
+  width: var(--size-sidebar);
+  border-right: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  z-index: var(--z-fixed);
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+}
+
+/* Main Content - Flex 1, fills remaining space */
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--color-background);
+  
+  /* CRITICAL: Prevents flex overflow */
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ============================================================================
+   RESPONSIVE LAYOUT - Sidebar collapse on smaller screens
+   ============================================================================ */
+
+/* Tablet: 768px - 1023px */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: absolute;
+    left: 0;
+    top: var(--size-topbar);
+    height: calc(100vh - var(--size-topbar));
+    max-width: var(--size-sidebar);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    z-index: var(--z-offcanvas);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: var(--size-topbar);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-backdrop);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-base);
+  }
+
+  .sidebar.open ~ .sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .app-container {
+    position: relative;
+  }
+}
+
+/* Mobile: < 768px */
+@media (max-width: 767px) {
+  .top-bar {
+    padding: 0 var(--spacing-4);
+    gap: var(--spacing-4);
+  }
+
+  .sidebar {
+    max-width: 100%;
+  }
+
+  .main-content {
+    padding: var(--spacing-4);
+  }
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
+  opacity: 1;
+}
+
+.dark .main-content::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-700);
+}
+
+.dark .main-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-600);
+}
+
+/* ============================================================================
+   TYPOGRAPHY DEFAULTS
+   ============================================================================ */
+
+/* Heading Styles */
+h1 {
+  font-size: var(--font-size-6xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  margin-bottom: var(--spacing-4);
+}
+
+h2 {
+  font-size: var(--font-size-5xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-3);
+}
+
+h3 {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-3);
+}
+
+h4 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+h5 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+h6 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-2);
+}
+
+/* Paragraph Defaults */
+p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-4);
+}
+
+small {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================================================
+   COMMON COMPONENTS STYLING
+   ============================================================================ */
+
+/* Container for page content */
+.container {
+  width: 100%;
+  max-width: var(--max-width-2xl);
+  margin: 0 auto;
+  padding: var(--spacing-8);
+}
+
+@media (max-width: 1279px) {
+  .container {
+    padding: var(--spacing-6);
+  }
+}
+
+@media (max-width: 767px) {
+  .container {
+    padding: var(--spacing-4);
+  }
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: var(--spacing-8);
+}
+
+.page-header h1 {
+  margin-bottom: var(--spacing-2);
+}
+
+.page-header p {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+}
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-6);
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Flex Utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+/* Grid Utilities */
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Visibility Utilities */
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+/* Overflow Utilities */
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Width & Height */
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.w-screen {
+  width: 100vw;
+}
+
+.h-screen {
+  height: 100vh;
+}
+
+/* Display Utilities */
+.block {
+  display: block;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.inline {
+  display: inline;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+/* Position Utilities */
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.sticky {
+  position: sticky;
+}
+
+/* Opacity Utilities */
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+/* Cursor Utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.cursor-default {
+  cursor: default;
+}
+
+/* ============================================================================
+   DARK MODE TRANSITIONS
+   ============================================================================ */
+
+body,
+.sidebar,
+.top-bar,
+.main-content,
+input,
+textarea,
+select {
+  transition: background-color var(--transition-base),
+    color var(--transition-base),
+    border-color var(--transition-base);
+}
+
+/* ============================================================================
+   FOCUS & KEYBOARD NAVIGATION
+   ============================================================================ */
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+@media print {
+  .no-print {
+    display: none;
+  }
+}

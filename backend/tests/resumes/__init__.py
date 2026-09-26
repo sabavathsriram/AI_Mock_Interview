@@ -1,0 +1,3 @@
+"""
+Resume tests module.
+"""

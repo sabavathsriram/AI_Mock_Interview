@@ -1,0 +1,267 @@
+/* ============================================================================
+   INPUT, SELECT, TEXTAREA COMPONENT STYLES
+   ============================================================================ */
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  width: 100%;
+}
+
+/* ============================================================================
+   LABELS
+   ============================================================================ */
+
+.input-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  user-select: none;
+  cursor: pointer;
+}
+
+.input-required {
+  color: var(--color-error-600);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ============================================================================
+   INPUT CONTAINER
+   ============================================================================ */
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  padding-right: var(--spacing-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-container:focus-within {
+  border-color: var(--color-primary-600);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.dark .input-container:focus-within {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.input-container.input-error {
+  border-color: var(--color-error-600);
+}
+
+.input-container.input-error:focus-within {
+  box-shadow: 0 0 0 3px var(--color-error-100);
+}
+
+.dark .input-container.input-error:focus-within {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* ============================================================================
+   INPUT ELEMENT
+   ============================================================================ */
+
+.input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  padding: var(--spacing-2) var(--spacing-3);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  /* Placeholder styling */
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  /* Disabled state */
+  &:disabled {
+    background-color: var(--color-neutral-50);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .dark &:disabled {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Autofill state */
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+    -webkit-text-fill-color: var(--color-text-primary);
+  }
+
+  .dark &:-webkit-autofill,
+  .dark &:-webkit-autofill:hover,
+  .dark &:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  }
+}
+
+.input-with-icon {
+  padding-left: var(--spacing-2);
+}
+
+/* ============================================================================
+   SELECT ELEMENT
+   ============================================================================ */
+
+.select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-2) center;
+  padding-right: var(--spacing-8);
+  color: var(--color-text-primary);
+
+  option {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+  }
+}
+
+.dark .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d1d5db' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+/* ============================================================================
+   TEXTAREA ELEMENT
+   ============================================================================ */
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: var(--font-mono);
+  padding: var(--spacing-3);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-300);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neutral-400);
+  }
+
+  .dark &::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-700);
+  }
+
+  .dark &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neutral-600);
+  }
+}
+
+/* ============================================================================
+   ICON
+   ============================================================================ */
+
+.input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+  margin-left: var(--spacing-2);
+}
+
+/* ============================================================================
+   ERROR & HELPER TEXT
+   ============================================================================ */
+
+.input-error-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-error-600);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+.input-helper-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-tight);
+}
+
+.input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-height: 20px;
+}
+
+.input-char-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+.dark .input-container {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.dark .input {
+  color: var(--color-text-primary);
+  background-color: transparent;
+
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+}
+
+.dark .select {
+  color: var(--color-text-primary);
+
+  option {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 767px) {
+  .input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .textarea {
+    min-height: 100px;
+  }
+}

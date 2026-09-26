@@ -1,0 +1,184 @@
+/* ============================================================================
+   AVATAR COMPONENT STYLES
+   ============================================================================ */
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  background-color: var(--color-primary-100);
+  border: 2px solid var(--color-surface);
+  position: relative;
+}
+
+/* ============================================================================
+   SIZES
+   ============================================================================ */
+
+.avatar-sm {
+  width: var(--size-avatar-sm);
+  height: var(--size-avatar-sm);
+  font-size: var(--font-size-xs);
+}
+
+.avatar-md {
+  width: var(--size-avatar-md);
+  height: var(--size-avatar-md);
+  font-size: var(--font-size-sm);
+}
+
+.avatar-lg {
+  width: var(--size-avatar-lg);
+  height: var(--size-avatar-lg);
+  font-size: var(--font-size-base);
+}
+
+.avatar-xl {
+  width: var(--size-avatar-xl);
+  height: var(--size-avatar-xl);
+  font-size: var(--font-size-2xl);
+}
+
+/* ============================================================================
+   IMAGE & INITIALS
+   ============================================================================ */
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: var(--font-weight-semibold);
+  color: white;
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+  user-select: none;
+}
+
+/* ============================================================================
+   AVATAR GROUP
+   ============================================================================ */
+
+.avatar-group {
+  display: flex;
+  align-items: center;
+  gap: -8px;
+}
+
+.avatar-group-sm {
+  gap: -6px;
+}
+
+.avatar-group-md {
+  gap: -12px;
+}
+
+.avatar-group-lg {
+  gap: -16px;
+}
+
+.avatar-group-xl {
+  gap: -20px;
+}
+
+.avatar-group-item {
+  position: relative;
+  z-index: 1;
+
+  &:not(:first-child) {
+    margin-left: -8px;
+  }
+
+  .avatar-group-sm &:not(:first-child) {
+    margin-left: -6px;
+  }
+
+  .avatar-group-md &:not(:first-child) {
+    margin-left: -12px;
+  }
+
+  .avatar-group-lg &:not(:first-child) {
+    margin-left: -16px;
+  }
+
+  .avatar-group-xl &:not(:first-child) {
+    margin-left: -20px;
+  }
+
+  &:hover {
+    z-index: 10;
+    box-shadow: 0 0 0 3px var(--color-surface);
+  }
+}
+
+.avatar-more {
+  background-color: var(--color-neutral-200);
+  border-color: var(--color-border);
+}
+
+.dark .avatar-more {
+  background-color: var(--color-neutral-700);
+  border-color: var(--color-border);
+}
+
+.avatar-more-text {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+/* ============================================================================
+   STATUS INDICATOR
+   ============================================================================ */
+
+.avatar-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  background-color: var(--color-success-500);
+}
+
+.avatar-status.offline {
+  background-color: var(--color-neutral-400);
+}
+
+.avatar-status.idle {
+  background-color: var(--color-warning-500);
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+.dark .avatar {
+  border-color: var(--color-surface);
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+.dark .avatar-initials {
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 767px) {
+  .avatar-group-item {
+    &:not(:first-child) {
+      margin-left: -6px;
+    }
+  }
+}

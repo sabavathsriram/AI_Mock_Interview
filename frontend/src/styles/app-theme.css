@@ -1,0 +1,669 @@
+.app-shell {
+  min-height: 100vh;
+  height: 100vh;
+  background: var(--color-background);
+}
+
+.app-shell-body {
+  min-height: 0;
+}
+
+.app-shell-main {
+  min-width: 0;
+  background: var(--color-background);
+}
+
+.app-shell-content {
+  min-height: 0;
+  background: var(--color-background);
+}
+
+.app-shell-section {
+  width: min(100%, 1480px);
+  max-width: 1480px;
+  padding: 32px 36px 48px;
+}
+
+.app-shell-breadcrumbs {
+  padding: 12px 36px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-shell-header {
+  margin-bottom: 28px;
+}
+
+.app-shell-title {
+  font-size: 30px;
+  letter-spacing: -0.03em;
+}
+
+.app-shell-subtitle {
+  color: var(--color-text-secondary);
+}
+
+.sidebar {
+  width: var(--size-sidebar);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+.sidebar-header {
+  height: var(--size-topbar);
+  padding: 0 18px;
+  background: var(--color-surface);
+}
+
+.sidebar-logo-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  box-shadow: 0 5px 14px rgba(79, 70, 229, 0.2);
+}
+
+.sidebar-logo-text {
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-nav {
+  padding: 18px 12px;
+}
+
+.sidebar-nav ul {
+  gap: 4px;
+}
+
+.sidebar-nav-item {
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sidebar-nav-item:hover:not(.active) {
+  background: #f5f7fb;
+  color: var(--color-text-primary);
+}
+
+.sidebar-nav-item.active {
+  background: #eef2ff;
+  color: #4338ca;
+  box-shadow: inset 3px 0 0 #4f46e5;
+}
+
+.sidebar-nav-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-footer {
+  padding: 14px 16px;
+}
+
+.top-nav {
+  height: var(--size-topbar);
+  padding: 0 28px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.top-nav-left,
+.top-nav-right {
+  gap: 10px;
+}
+
+.top-nav-search {
+  min-width: 280px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.top-nav-search:focus-within {
+  border-color: #a5b4fc;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+}
+
+.top-nav-icon-btn,
+.top-nav-menu-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.top-nav-icon-btn:hover,
+.top-nav-menu-btn:hover {
+  background: #f1f5f9;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+}
+
+.card:hover {
+  border-color: #d8def0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.card-elevated {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+}
+
+.card-elevated:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.card-padding-sm {
+  padding: 16px;
+}
+
+.card-padding-md {
+  padding: 20px;
+}
+
+.card-padding-lg {
+  padding: 24px;
+}
+
+.card-header {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+}
+
+.card-body {
+  gap: 14px;
+}
+
+.card-footer {
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.btn {
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.btn-sm {
+  height: 36px;
+  padding: 0 12px;
+}
+
+.btn-md {
+  height: 40px;
+  padding: 0 15px;
+}
+
+.btn-lg {
+  height: 44px;
+  padding: 0 18px;
+}
+
+.btn-primary {
+  background: #4f46e5;
+  box-shadow: 0 5px 12px rgba(79, 70, 229, 0.18);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.24);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #374151;
+  border-color: #dfe3ea;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #c7ced9;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.input,
+.form-input,
+input:not([type='checkbox']):not([type='radio']),
+textarea,
+select {
+  border-radius: 10px;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+textarea,
+select {
+  border-color: #d9dee8;
+  background: #fff;
+  color: var(--color-text-primary);
+}
+
+input:not([type='checkbox']):not([type='radio']):focus,
+textarea:focus,
+select:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+  outline: none;
+}
+
+.badge-secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.dashboard-page,
+.interview-history-page,
+.results-container,
+.interview-page,
+.jobs-page,
+.learning-page,
+.profile-page,
+.progress-page,
+.resume-analysis-page,
+.resumes-page,
+.settings-page,
+.skills-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard-page-header,
+.interview-history-header,
+.interview-page-header,
+.jobs-page-header,
+.learning-page-header,
+.profile-header,
+.progress-page-header,
+.skills-page-header,
+.resume-analysis-header,
+.resumes-page-header,
+.settings-header {
+  margin-bottom: 28px;
+}
+
+.dashboard-welcome h1,
+.interview-history-header-content h1,
+.interview-header-content h1,
+.jobs-header-content h1,
+.learning-page-header-content h1,
+.profile-header-content h1,
+.progress-page-header-content h1,
+.skills-page-header-content h1,
+.resume-analysis-header-content h1,
+.resumes-header-content h1,
+.settings-header-content h1 {
+  color: var(--color-text-primary);
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+.dashboard-welcome p,
+.interview-history-header-content p,
+.interview-header-content p,
+.jobs-header-content p,
+.learning-page-header-content p,
+.profile-header-content p,
+.progress-page-header-content p,
+.skills-page-header-content p,
+.resume-analysis-header-content p,
+.resumes-header-content p,
+.settings-header-content p {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.dashboard-stats-grid,
+.progress-stats-grid {
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-main-grid {
+  gap: 18px;
+}
+
+.dashboard-readiness-circle {
+  width: 132px;
+  height: 132px;
+}
+
+.dashboard-readiness-percent {
+  font-size: 28px;
+}
+
+.dashboard-interview-item,
+.dashboard-recommendation-item {
+  border-color: #edf0f5;
+}
+
+.dashboard-ai-title {
+  color: var(--color-text-primary);
+}
+
+.resume-upload-container,
+.resume-list-container {
+  width: 100%;
+}
+
+.resume-upload-card,
+.resume-list-card {
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+.file-drop-zone {
+  border-radius: 14px;
+  border: 1.5px dashed #cbd5e1;
+  background: #f8fafc;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.has-file {
+  border-color: #818cf8;
+  background: #f8f9ff;
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.08);
+}
+
+.interview-content {
+  max-width: 1440px;
+  gap: 20px;
+  padding: 24px 32px 40px;
+}
+
+.interview-question-card,
+.ai-question-card,
+.response-card,
+.interview-sidebar-card {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+.interview-timer {
+  border: 1px solid #e0e7ff;
+  border-radius: 10px;
+  background: #f5f7ff;
+}
+
+.results-container,
+.interview-history-page,
+.settings-page,
+.skills-page,
+.progress-page,
+.learning-page,
+.resumes-page,
+.resume-analysis-page,
+.jobs-page,
+.profile-page {
+  max-width: 1480px;
+}
+
+.results-header,
+.interview-history-header,
+.settings-header,
+.skills-page-header,
+.progress-page-header,
+.learning-page-header,
+.profile-header,
+.resumes-page-header,
+.resume-analysis-header,
+.jobs-page-header,
+.interview-page-header {
+  padding-top: 2px;
+}
+
+.settings-layout {
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.settings-nav-card {
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.035);
+}
+
+.settings-section-card,
+.skills-page-skill-card,
+.interview-history-filters-card,
+.progress-chart-card,
+.learning-overview-card,
+.resume-analysis-overview,
+.resumes-upload-card {
+  border-radius: 14px;
+}
+
+.skills-page-grid {
+  gap: 16px;
+}
+
+.skills-page-skill-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.interview-history-filters,
+.jobs-main-grid,
+.progress-charts-grid,
+.learning-main-grid,
+.resume-analysis-grid {
+  gap: 18px;
+}
+
+.interview-history-search input {
+  min-height: 40px;
+}
+
+.landing-page {
+  min-height: 100vh;
+}
+
+.landing-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.home-page .home-hero {
+  background: radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.32), transparent 34%), linear-gradient(135deg, #312e81 0%, #4f46e5 58%, #4338ca 100%);
+}
+
+.home-quick-start,
+.home-features {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+.quick-start-card,
+.feature-card,
+.step-card,
+.home-feature-card {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.035);
+}
+
+@media (max-width: 1023px) {
+  .app-shell-section {
+    padding: 28px 24px 40px;
+  }
+
+  .top-nav {
+    padding: 0 20px;
+  }
+
+  .sidebar {
+    width: 272px;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell-section {
+    padding: 22px 16px 32px;
+  }
+
+  .app-shell-breadcrumbs {
+    padding: 10px 16px;
+  }
+
+  .app-shell-title,
+  .dashboard-welcome h1,
+  .interview-history-header-content h1,
+  .interview-header-content h1,
+  .jobs-header-content h1,
+  .learning-page-header-content h1,
+  .profile-header-content h1,
+  .progress-page-header-content h1,
+  .skills-page-header-content h1,
+  .resume-analysis-header-content h1,
+  .resumes-header-content h1,
+  .settings-header-content h1 {
+    font-size: 24px;
+  }
+
+  .dashboard-page-header,
+  .interview-history-header,
+  .interview-page-header,
+  .jobs-page-header,
+  .learning-page-header,
+  .profile-header,
+  .progress-page-header,
+  .skills-page-header,
+  .resume-analysis-header,
+  .resumes-page-header,
+  .settings-header {
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .top-nav {
+    padding: 0 14px;
+  }
+
+  .top-nav-search {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .top-nav-right {
+    gap: 4px;
+  }
+
+  .dashboard-stats-grid,
+  .progress-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .interview-content {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .home-quick-start,
+  .home-features {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-stats-grid,
+  .progress-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dark .app-shell,
+.dark .app-shell-main,
+.dark .app-shell-content {
+  background: #0f172a;
+}
+
+.dark .top-nav,
+.dark .sidebar,
+.dark .card,
+.dark .resume-upload-card,
+.dark .resume-list-card,
+.dark .settings-nav-card,
+.dark .settings-section-card,
+.dark .skills-page-skill-card,
+.dark .interview-history-filters-card {
+  background: #111827;
+  border-color: #263244;
+}
+
+.dark .top-nav {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.dark .top-nav-search,
+.dark input:not([type='checkbox']):not([type='radio']),
+.dark textarea,
+.dark select {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.dark .sidebar-nav-item:hover:not(.active),
+.dark .top-nav-icon-btn:hover,
+.dark .top-nav-menu-btn:hover {
+  background: #1e293b;
+}
+
+.dark .sidebar-nav-item.active {
+  background: rgba(99, 102, 241, 0.16);
+  color: #a5b4fc;
+}
+
+.dark .file-drop-zone {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark .file-drop-zone:hover,
+.dark .file-drop-zone.has-file {
+  background: #111a30;
+  border-color: #6366f1;
+}
+
+.dark .btn-secondary {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.dark .btn-secondary:hover:not(:disabled) {
+  background: #273449;
+}
+
+.dark .badge-secondary {
+  background: #1e293b;
+  color: #cbd5e1;
+}
