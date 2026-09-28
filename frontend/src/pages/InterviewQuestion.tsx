@@ -55,6 +55,15 @@ export const InterviewQuestion: React.FC = () => {
         setLoading(true)
         const status = await interviewService.getInterviewStatus(sessionId)
         
+        // CRITICAL: Check if interview is completed
+        // Completed interviews should NOT be displayed in the active question interface
+        if (status.status && status.status.toLowerCase() === 'completed') {
+          console.log(`[DEBUG] Interview ${sessionId} is completed. Redirecting to results page.`)
+          setLoading(false)
+          navigate(`/interview/${sessionId}/results`)
+          return
+        }
+        
         // Use first question from state if available, otherwise use a placeholder
         const currentQuestion = firstQuestion || {
           question_id: `q_${status.current_question_index}`,
@@ -81,7 +90,7 @@ export const InterviewQuestion: React.FC = () => {
     }
 
     loadInterview()
-  }, [sessionId, firstQuestion])
+  }, [sessionId, firstQuestion, navigate])
 
   // Timer
   useEffect(() => {

@@ -887,6 +887,18 @@ class InterviewService extends BaseService {
     }
   }
 
+  async triggerEvaluation(interviewSessionId: string): Promise<any> {
+    try {
+      const response = await this.post<any>(
+        `/interviews/${interviewSessionId}/evaluate-all`,
+        {}
+      )
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to trigger evaluation')
+    }
+  }
+
   async getSkillAssessment(interviewSessionId: string): Promise<SkillAssessmentResponse> {
     try {
       const response = await this.get<SkillAssessmentResponse>(
@@ -938,6 +950,17 @@ class InterviewService extends BaseService {
       return response.data
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch interview history')
+    }
+  }
+
+  async deleteInterview(interviewSessionId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await this.delete<{ success: boolean; message: string }>(
+        `/interviews/${interviewSessionId}`
+      )
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to delete interview')
     }
   }
 }

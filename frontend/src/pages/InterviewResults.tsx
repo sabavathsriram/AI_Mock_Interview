@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -22,14 +22,58 @@ import { Progress } from '@/components/Progress'
 import { interviewService, EvaluationResponse } from '@/services/api'
 import './InterviewResults.css'
 
+// Helper: Format IST timestamp (backend sends ISO UTC, display in IST)
+const formatInterviewDateTime = (dateString: string): string => {
+  const date = new Date(dateString)
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata'
+  })
+  const parts = formatter.formatToParts(date)
+  let formatted = ''
+  for (const part of parts) {
+    if (part.type === 'literal' && part.value === ', ') {
+      formatted += ', '
+    } else if (part.type !== 'timeZoneName') {
+      formatted += part.value
+    }
+  }
+  return formatted + ' IST'
+}
+
+// Helper: Get performance rating (0-100% scale)
+const getPerformanceRating = (percentage: number): string => {
+  if (percentage >= 90) return 'Outstanding'
+  if (percentage >= 75) return 'Excellent'
+  if (percentage >= 65) return 'Good'
+  if (percentage >= 50) return 'Satisfactory'
+  return 'Needs Improvement'
+}
+
+// Helper: Get score variant for badge (0-100% scale)
+const getScoreVariant = (percentage: number): 'success' | 'warning' | 'error' => {
+  if (percentage >= 75) return 'success'
+  if (percentage >= 60) return 'warning'
+  return 'error'
+}
+
 export const InterviewResults: React.FC = () => {
   const { id } = useParams()
   const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [evaluatingInProgress, setEvaluatingInProgress] = useState(false)
+  const evaluationTriggeredRef = useRef(false)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   
   useEffect(() => {
-    const fetchEvaluation = async () => {
+    const fetchAndTriggerEvaluation = async () => {
       if (!id) {
         setError('Interview ID not found')
         setLoading(false)
@@ -38,8 +82,38 @@ export const InterviewResults: React.FC = () => {
 
       try {
         setLoading(true)
+        
+        // First, try to get existing evaluations
         const eval_data = await interviewService.getEvaluation(id)
-        setEvaluation(eval_data)
+        
+        // If no evaluations yet (overall_score is null), trigger evaluation
+        if (eval_data.overall_score === null || eval_data.overall_score === undefined) {
+          setEvaluatingInProgress(true)
+          console.log(`[DEBUG] Overall score is ${eval_data.overall_score}, triggering evaluation`)
+          
+          try {
+            // Trigger batch evaluation
+            console.log(`[DEBUG] Calling triggerEvaluation for session ${id}`)
+            const triggerResult = await interviewService.triggerEvaluation(id)
+            console.log(`[DEBUG] Trigger evaluation response:`, triggerResult)
+            
+            // Wait a moment for evaluations to process, then fetch again
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            
+            console.log(`[DEBUG] Fetching updated evaluations`)
+            const updated_eval = await interviewService.getEvaluation(id)
+            console.log(`[DEBUG] Updated evaluation:`, updated_eval)
+            setEvaluation(updated_eval)
+          } catch (triggerErr) {
+            console.error(`[DEBUG] Error during evaluation trigger:`, triggerErr)
+            throw triggerErr
+          } finally {
+            setEvaluatingInProgress(false)
+          }
+        } else {
+          setEvaluation(eval_data)
+        }
+        
         setError(null)
       } catch (err: any) {
         console.error('Failed to fetch evaluation:', err)
@@ -49,7 +123,7 @@ export const InterviewResults: React.FC = () => {
       }
     }
 
-    fetchEvaluation()
+    fetchAndTriggerEvaluation()
   }, [id])
 
   if (loading) {
@@ -102,59 +176,25 @@ export const InterviewResults: React.FC = () => {
     )
   }
 
-  const date = new Date(evaluation.created_at).toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  })
+  const date = formatInterviewDateTime(evaluation.created_at)
 
-  const getScoreVariant = (score: number): 'success' | 'warning' | 'error' => {
-    if (score >= 75) return 'success'
-    if (score >= 60) return 'warning'
-    return 'error'
-  }
+  // Calculate percentage from 0-10 score
+  const overallPercentage = evaluation.overall_score ? Math.round(evaluation.overall_score * 10) : 0
+  const technicalPercentage = evaluation.technical_knowledge_score ? Math.round(evaluation.technical_knowledge_score * 10) : 0
+  const communicationPercentage = evaluation.communication_score ? Math.round(evaluation.communication_score * 10) : 0
+  const problemSolvingPercentage = evaluation.problem_solving_score ? Math.round(evaluation.problem_solving_score * 10) : 0
 
-  const getPerformanceRating = (score: number): string => {
-    if (score >= 85) return 'Outstanding'
-    if (score >= 75) return 'Excellent'
-    if (score >= 65) return 'Good'
-    if (score >= 50) return 'Satisfactory'
-    return 'Needs Improvement'
-  }
+  // Use real evaluation data from backend
+  const performanceByCategory = evaluation.categories && evaluation.categories.length > 0 
+    ? evaluation.categories.map(cat => ({
+        name: cat.name,
+        score: cat.score ? Math.round(cat.score * 10) : 0,  // Convert 0-10 to 0-100
+        feedback: cat.feedback
+      }))
+    : []
 
-  const performanceByCategory = [
-    { name: 'Technical Knowledge', score: 85, feedback: 'Excellent understanding of core concepts' },
-    { name: 'Communication', score: 72, feedback: 'Could improve articulation of complex ideas' },
-    { name: 'Problem Solving', score: 89, feedback: 'Strong analytical approach demonstrated' },
-    { name: 'Code Quality', score: 65, feedback: 'Focus on optimization and best practices' },
-    { name: 'System Design', score: 52, feedback: 'This is your weakest area - needs practice' },
-  ]
-
-  const questions = [
-    { num: 1, question: 'Stack vs Queue Data Structures', score: 85, status: 'excellent' },
-    { num: 2, question: 'HTTP Request Process', score: 72, status: 'good' },
-    { num: 3, question: 'Quick Sort Complexity', score: 89, status: 'excellent' },
-    { num: 4, question: 'URL Shortener System Design', score: 52, status: 'needs-improvement' },
-  ]
-
-  const strengths = [
-    'Clear explanation of fundamental concepts',
-    'Logical problem-solving approach',
-    'Good use of examples',
-  ]
-
-  const improvements = [
-    'Practice system design questions - your weakest area',
-    'Work on deep diving into trade-offs and scalability',
-    'Improve time management for complex questions',
-  ]
-
-  const recommendations = [
-    { title: 'System Design Bootcamp', time: '2 hours', difficulty: 'Hard', why: 'Your weakest area' },
-    { title: 'Communication Skills', time: '1.5 hours', difficulty: 'Medium', why: 'Improve articulation' },
-    { title: 'Advanced Algorithms', time: '3 hours', difficulty: 'Hard', why: 'Deepen knowledge' },
-  ]
+  const strengths = evaluation.strengths || []
+  const improvements = evaluation.improvement_areas || []
 
   return (
     <AppShell
@@ -192,7 +232,23 @@ export const InterviewResults: React.FC = () => {
           </div>
 
           {/* Overall Score Card */}
-          <Card variant="elevated" padding="lg" className="results-score-card">
+          {evaluation.overall_score === null || evaluation.overall_score === undefined ? (
+            <Card variant="elevated" padding="lg" className="results-score-card">
+              <CardBody>
+                <div style={{ textAlign: 'center', padding: '32px' }}>
+                  <Lightbulb size={48} style={{ color: 'var(--color-warning-500)', marginBottom: '16px' }} />
+                  <h2>Evaluations Pending</h2>
+                  <p style={{ color: '#666', marginTop: '8px', marginBottom: '16px' }}>
+                    Your responses are being evaluated. Please check back in a few moments.
+                  </p>
+                  <p style={{ color: '#999', fontSize: '12px' }}>
+                    Interview completed at {date}
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          ) : (
+            <Card variant="elevated" padding="lg" className="results-score-card">
             <CardBody>
               <div className="results-score-inner">
                 <div className="results-score-circle">
@@ -210,40 +266,42 @@ export const InterviewResults: React.FC = () => {
                       r="90"
                       className="results-circle-progress"
                       style={{
-                        strokeDasharray: `${565.5 * (evaluation.overall_score / 100)} 565.5`,
+                        strokeDasharray: `${565.5 * (overallPercentage / 100)} 565.5`,
                       }}
                     />
                   </svg>
                   <div className="results-score-text">
-                    <span className="results-score-value">{Math.round(evaluation.overall_score)}%</span>
+                    <span className="results-score-value">{overallPercentage}%</span>
                     <span className="results-score-label">Overall Score</span>
                   </div>
                 </div>
                 <div className="results-score-details">
                   <div className="results-score-item">
                     <span>Performance</span>
-                    <Badge variant={evaluation.overall_score >= 75 ? 'success' : evaluation.overall_score >= 60 ? 'warning' : 'error'}>
-                      {getPerformanceRating(evaluation.overall_score)}
+                    <Badge variant={getScoreVariant(overallPercentage)}>
+                      {getPerformanceRating(overallPercentage)}
                     </Badge>
                   </div>
                   <div className="results-score-item">
                     <span>Technical Knowledge</span>
-                    <span className="results-score-item-value">{Math.round(evaluation.technical_knowledge_score)}%</span>
+                    <span className="results-score-item-value">{technicalPercentage}%</span>
                   </div>
                   <div className="results-score-item">
                     <span>Communication</span>
-                    <span className="results-score-item-value">{Math.round(evaluation.communication_score)}%</span>
+                    <span className="results-score-item-value">{communicationPercentage}%</span>
                   </div>
                   <div className="results-score-item">
                     <span>Problem Solving</span>
-                    <span className="results-score-item-value">{Math.round(evaluation.problem_solving_score)}%</span>
+                    <span className="results-score-item-value">{problemSolvingPercentage}%</span>
                   </div>
                 </div>
               </div>
             </CardBody>
           </Card>
+          )}
 
-          {/* Two Column Layout */}
+          {/* Two Column Layout - Only show if evaluations are available */}
+          {evaluation.overall_score !== null && evaluation.overall_score !== undefined && (
           <div className="results-grid">
             {/* Left Column */}
             <div className="results-left">
@@ -257,16 +315,19 @@ export const InterviewResults: React.FC = () => {
                 </CardHeader>
                 <CardBody>
                   <div className="results-performance-list">
-                    {evaluation.categories.map((cat, idx) => (
-                      <div key={idx} className="results-performance-item">
-                        <div className="results-performance-header">
-                          <span className="results-performance-name">{cat.name}</span>
-                          <Badge variant={getScoreVariant(cat.score)} size="sm">{Math.round(cat.score)}%</Badge>
+                    {evaluation.categories.map((cat, idx) => {
+                      const catPercentage = cat.score ? Math.round(cat.score * 10) : 0
+                      return (
+                        <div key={idx} className="results-performance-item">
+                          <div className="results-performance-header">
+                            <span className="results-performance-name">{cat.name}</span>
+                            <Badge variant={getScoreVariant(catPercentage)} size="sm">{catPercentage}%</Badge>
+                          </div>
+                          <Progress value={catPercentage} color={getScoreVariant(catPercentage)} showPercent={false} />
+                          <p className="results-performance-feedback">{cat.feedback}</p>
                         </div>
-                        <Progress value={cat.score} color={getScoreVariant(cat.score)} showPercent={false} />
-                        <p className="results-performance-feedback">{cat.feedback}</p>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </CardBody>
               </Card>
@@ -328,6 +389,7 @@ export const InterviewResults: React.FC = () => {
               </Card>
             </div>
           </div>
+          )}
 
           {/* Bottom CTA */}
           <Card variant="elevated" padding="lg" className="results-footer-card">

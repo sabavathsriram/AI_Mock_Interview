@@ -62,6 +62,12 @@ class InterviewResponse(BaseDBModel):
     # Processing metadata
     processing_duration_ms: Optional[int] = Field(None, description="Time to process response")
     
+    # Evaluation data (added by ResponseEvaluationAgent)
+    evaluation: Optional[Dict[str, Any]] = Field(
+        None,
+        description="AI evaluation of this response with scores and feedback"
+    )
+    
     class Config:
         json_schema_extra = {
             "example": {

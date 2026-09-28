@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, Eye } from 'lucide-react'
+import { AlertCircle, Eye, MoreVertical, Trash2 } from 'lucide-react'
 import { AppShell, AppShellContent } from '@/components/layout'
 import { Card, CardBody } from '@/components/Card'
 import { Button } from '@/components/common'
+import { Alert } from '@/components/Alert'
+import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal'
 import { interviewService } from '@/services/api'
 import './InterviewHistory.css'
 
@@ -25,6 +27,11 @@ export const InterviewHistory: React.FC = () => {
   const [interviews, setInterviews] = useState<InterviewHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [selectedInterview, setSelectedInterview] = useState<InterviewHistoryItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   useEffect(() => {
     fetchInterviewHistory()
@@ -68,6 +75,37 @@ export const InterviewHistory: React.FC = () => {
     return difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
   }
 
+  // Format status from enum to readable label
+  const formatStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'in_progress': 'In Progress',
+      'evaluation_pending': 'Evaluation Pending',
+      'completed': 'Completed',
+      'failed': 'Evaluation Failed',
+      'not_started': 'Not Started',
+      'paused': 'Paused',
+      'cancelled': 'Cancelled',
+    }
+    return statusMap[status] || formatInterviewType(status)
+  }
+
+  // Get action buttons based on status
+  const getActionLabel = (status: string): string => {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
+      case 'in_progress':
+        return 'Resume'
+      case 'evaluation_pending':
+        return 'View Status'
+      case 'completed':
+        return 'View Results'
+      case 'failed':
+        return 'Retry Evaluation'
+      default:
+        return 'View'
+    }
+  }
+
   const getStatusBadgeClass = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -85,8 +123,60 @@ export const InterviewHistory: React.FC = () => {
     }
   }
 
-  const handleViewInterview = (sessionId: string) => {
-    navigate(`/interview/${sessionId}/summary`)
+  const handleViewInterview = (interview: InterviewHistoryItem) => {
+    // For completed interviews, navigate to results page
+    // For active/in-progress interviews, navigate to question page
+    if (interview.interview_status && interview.interview_status.toLowerCase() === 'completed') {
+      navigate(`/interview/${interview.session_id}/results`)
+    } else {
+      navigate(`/interview/${interview.session_id}/question`)
+    }
+  }
+
+  const handleDeleteClick = (interview: InterviewHistoryItem, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedInterview(interview)
+    setDeleteModalOpen(true)
+    setDeleteError(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!selectedInterview) return
+
+    try {
+      setIsDeleting(true)
+      setDeleteError(null)
+
+      await interviewService.deleteInterview(selectedInterview.session_id)
+
+      // Remove from UI immediately
+      setInterviews((prevInterviews) =>
+        prevInterviews.filter((i) => i.session_id !== selectedInterview.session_id)
+      )
+
+      setDeleteModalOpen(false)
+      setSelectedInterview(null)
+
+      // Show success message
+      const interviewTitle = `${selectedInterview.target_position} - ${formatDate(selectedInterview.started_at)}`
+      setSuccessMessage(`Interview "${interviewTitle}" has been deleted successfully.`)
+
+      // Auto-dismiss success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to delete interview. Please try again.')
+      console.error('Error deleting interview:', err)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false)
+    setSelectedInterview(null)
+    setDeleteError(null)
   }
 
   if (loading) {
@@ -209,6 +299,16 @@ export const InterviewHistory: React.FC = () => {
             </div>
           </div>
 
+          {/* Success Message */}
+          {successMessage && (
+            <Alert
+              type="success"
+              message={successMessage}
+              dismissible
+              onClose={() => setSuccessMessage(null)}
+            />
+          )}
+
           {/* Interviews List */}
           <div className="interviews-list">
             {interviews.map((interview) => (
@@ -224,18 +324,30 @@ export const InterviewHistory: React.FC = () => {
                       <div className="interview-history-item-title">
                         <h3>{formatInterviewType(interview.interview_type)}</h3>
                         <span className={`status-badge ${getStatusBadgeClass(interview.interview_status)}`}>
-                          {formatInterviewType(interview.interview_status)}
+                          {formatStatus(interview.interview_status)}
                         </span>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewInterview(interview.session_id)}
-                        className="view-button"
-                      >
-                        <Eye size={16} />
-                        View
-                      </Button>
+                      <div className="interview-history-item-actions">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewInterview(interview)}
+                          className="view-button"
+                        >
+                          <Eye size={16} />
+                          {getActionLabel(interview.interview_status)}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleDeleteClick(interview, e)}
+                          className="delete-button"
+                          title="Delete interview"
+                          disabled={isDeleting}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="interview-history-item-details">
@@ -269,6 +381,20 @@ export const InterviewHistory: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* Delete Confirmation Modal */}
+          <ConfirmDeleteModal
+            isOpen={deleteModalOpen}
+            title="Delete Interview?"
+            message="Are you sure you want to delete this interview? This will permanently remove the interview, answers, evaluation, and results from your history."
+            itemName={selectedInterview ? `${selectedInterview.target_position} - ${formatDate(selectedInterview.started_at)}` : undefined}
+            isLoading={isDeleting}
+            error={deleteError}
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+            confirmButtonText="Delete Interview"
+            cancelButtonText="Cancel"
+          />
         </div>
       </AppShellContent>
     </AppShell>

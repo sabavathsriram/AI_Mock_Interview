@@ -23,6 +23,7 @@ from app.database.models.interview_session import (
 from app.database.models.interview_plan import InterviewPlan
 from app.services.interviewer_agent import interviewer_agent, InterviewerAction
 from app.services.interview_context_service import interview_context_service
+from app.services.response_evaluation_agent import ResponseEvaluationAgent
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -598,6 +599,179 @@ async def get_interview_status(
             detail=f"Failed to get interview status: {str(e)}"
         )
 
+
+
+@router.get("/{session_id}/evaluation")
+async def get_session_evaluation(
+    session_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get aggregated evaluation for a completed interview session.
+    
+    Retrieves and aggregates all response evaluations from a session.
+    Returns a summary with overall scores, feedback, and analysis.
+    
+    Args:
+        session_id: The interview session ID
+        current_user: The authenticated user
+        
+    Returns:
+        Aggregated evaluation data across all responses
+    """
+    try:
+        sessions_collection = mongodb.get_collection("interview_sessions")
+        session_doc = await sessions_collection.find_one({
+            "_id": ObjectId(session_id),
+            "user_id": str(current_user.id)
+        })
+        
+        if not session_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Interview session not found"
+            )
+        
+        session = InterviewSession(**session_doc)
+        
+        # Aggregate evaluations from all responses
+        evaluations = []
+        for resp in session.responses:
+            if resp.evaluation:
+                evaluations.append(resp.evaluation)
+        
+        # If no evaluations yet, return response indicating evaluations are pending
+        if not evaluations:
+            return {
+                "_id": str(session_doc.get("_id", session_id)),
+                "interview_session_id": session_id,
+                "user_id": str(current_user.id),
+                "overall_score": None,  # None instead of 0 to indicate no evaluation
+                "overall_feedback": "Evaluations are being processed. Please check back soon.",
+                "categories": [],
+                "strengths": [],
+                "weaknesses": [],
+                "improvement_areas": [],
+                "technical_knowledge_score": None,
+                "communication_score": None,
+                "problem_solving_score": None,
+                "skill_gaps": [],
+                "training_recommendations": [],
+                "is_ai_generated": False,
+                "ai_model_used": None,
+                "confidence_score": None,
+                "created_at": session_doc.get("created_at", datetime.utcnow()).isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
+            }
+        
+        # Calculate aggregated scores
+        num_evals = len(evaluations)
+        avg_correctness = sum(e.get('correctness', 0) for e in evaluations) / num_evals
+        avg_relevance = sum(e.get('relevance', 0) for e in evaluations) / num_evals
+        avg_technical_depth = sum(e.get('technical_depth', 0) for e in evaluations) / num_evals
+        avg_clarity = sum(e.get('clarity', 0) for e in evaluations) / num_evals
+        avg_reasoning = sum(e.get('reasoning', 0) for e in evaluations) / num_evals
+        avg_communication = sum(e.get('communication', 0) for e in evaluations) / num_evals
+        overall_score = sum(e.get('overall_score', 0) for e in evaluations) / num_evals
+        
+        # Aggregate arrays
+        all_strengths = []
+        all_weaknesses = []
+        all_skills = []
+        all_suggestions = []
+        
+        for e in evaluations:
+            all_strengths.extend(e.get('strengths', []))
+            all_weaknesses.extend(e.get('weaknesses', []))
+            all_skills.extend(e.get('skills_demonstrated', []))
+            all_suggestions.extend(e.get('improvement_suggestions', []))
+        
+        # Remove duplicates while preserving order
+        def unique_list(lst):
+            seen = set()
+            result = []
+            for item in lst:
+                if item not in seen:
+                    seen.add(item)
+                    result.append(item)
+            return result
+        
+        all_strengths = unique_list(all_strengths)
+        all_weaknesses = unique_list(all_weaknesses)
+        all_skills = unique_list(all_skills)
+        all_suggestions = unique_list(all_suggestions)
+        
+        # Build response matching frontend EvaluationResponse structure
+        response_data = {
+            "_id": str(session_doc.get("_id", session_id)),
+            "interview_session_id": session_id,
+            "user_id": str(current_user.id),
+            "overall_score": round(overall_score, 1),
+            "overall_feedback": f"Interview completed with {num_evals} question(s) evaluated. Overall performance: {round(overall_score, 1)}/10",
+            "categories": [
+                {
+                    "name": "Correctness",
+                    "weight": 0.2,
+                    "score": round(avg_correctness, 1),
+                    "feedback": f"Average accuracy: {round(avg_correctness, 1)}/10"
+                },
+                {
+                    "name": "Relevance",
+                    "weight": 0.2,
+                    "score": round(avg_relevance, 1),
+                    "feedback": f"Average relevance: {round(avg_relevance, 1)}/10"
+                },
+                {
+                    "name": "Technical Depth",
+                    "weight": 0.2,
+                    "score": round(avg_technical_depth, 1),
+                    "feedback": f"Average technical depth: {round(avg_technical_depth, 1)}/10"
+                },
+                {
+                    "name": "Clarity",
+                    "weight": 0.2,
+                    "score": round(avg_clarity, 1),
+                    "feedback": f"Average clarity: {round(avg_clarity, 1)}/10"
+                },
+                {
+                    "name": "Communication",
+                    "weight": 0.2,
+                    "score": round(avg_communication, 1),
+                    "feedback": f"Average communication: {round(avg_communication, 1)}/10"
+                }
+            ],
+            "strengths": all_strengths[:10],  # Top 10 strengths
+            "weaknesses": all_weaknesses[:10],  # Top 10 weaknesses
+            "improvement_areas": all_suggestions[:10],  # Top 10 suggestions
+            "technical_knowledge_score": round(avg_technical_depth, 1),
+            "communication_score": round(avg_communication, 1),
+            "problem_solving_score": round(avg_reasoning, 1),
+            "skill_gaps": all_weaknesses[:5],
+            "training_recommendations": all_suggestions[:5],
+            "is_ai_generated": True,
+            "ai_model_used": "openai/gpt-oss-120b",
+            "confidence_score": 0.85,
+            "created_at": session_doc.get("created_at", datetime.utcnow()).isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Retrieved evaluation for session {session_id}: {num_evals} evaluations aggregated")
+        return response_data
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Invalid session ID: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid session ID"
+        )
+    except Exception as e:
+        logger.error(f"Error retrieving evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve evaluation"
+        )
 
 @router.post("/{session_id}/pause", response_model=PauseResumeResponse)
 async def pause_interview(
@@ -1350,10 +1524,15 @@ async def get_next_interview_question(
         updated_session = await live_interviewer_agent.get_session(session_id, str(current_user.id))
         
         if next_question is None:
-            # No more questions - interview complete
+            # No more questions - mark interview as complete
+            completed_session = await live_interviewer_agent.complete_interview(
+                session_id=session_id,
+                user_id=str(current_user.id)
+            )
+            
             return NextQuestionResponse(
-                current_question_index=updated_session.current_question_index,
-                total_questions=updated_session.question_count,
+                current_question_index=completed_session.current_question_index,
+                total_questions=completed_session.question_count,
                 is_complete=True,
                 current_question=None
             )
@@ -1461,6 +1640,400 @@ async def abandon_interview(
         )
 
 
+@router.get("/{session_id}/debug-responses")
+async def debug_session_responses(
+    session_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    DEBUG ENDPOINT - Get raw response structure from MongoDB for debugging.
+    """
+    try:
+        sessions_collection = mongodb.get_collection("interview_sessions")
+        session_doc = await sessions_collection.find_one({
+            "_id": ObjectId(session_id),
+            "user_id": str(current_user.id)
+        })
+        
+        if not session_doc:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Return raw responses structure
+        responses = session_doc.get("responses", [])
+        
+        debug_info = {
+            "session_id": session_id,
+            "total_responses": len(responses),
+            "responses": []
+        }
+        
+        for idx, resp in enumerate(responses):
+            debug_info["responses"].append({
+                "index": idx,
+                "keys": list(resp.keys()) if isinstance(resp, dict) else "NOT A DICT",
+                "response_id": resp.get("response_id") if isinstance(resp, dict) else "N/A",
+                "question_id": resp.get("question_id") if isinstance(resp, dict) else "N/A",
+                "has_evaluation": "evaluation" in resp if isinstance(resp, dict) else False,
+                "answer_length": len(resp.get("answer", "")) if isinstance(resp, dict) else 0,
+            })
+        
+        return debug_info
+        
+    except Exception as e:
+        logger.error(f"Debug error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{session_id}/evaluate-all")
+async def evaluate_all_responses(
+    session_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Evaluate all unevaluated responses in a completed interview session.
+    
+    This endpoint batch-evaluates all responses that don't yet have evaluations,
+    storing each evaluation in the interview_sessions document.
+    
+    Args:
+        session_id: The interview session ID
+        current_user: The authenticated user
+        
+    Returns:
+        Dictionary with evaluation statistics
+    """
+    try:
+        import sys
+        sys.stderr.write(f"[EVALUATE-ALL-START] session_id={session_id}, user={current_user.id}\n")
+        sys.stderr.flush()
+        
+        logger.info(f"[EVALUATE-ALL] START - session_id={session_id}, user={current_user.id}")
+        
+        sessions_collection = mongodb.get_collection("interview_sessions")
+        
+        # First, verify session exists
+        session_doc = await sessions_collection.find_one({
+            "_id": ObjectId(session_id),
+            "user_id": str(current_user.id)
+        })
+        
+        if not session_doc:
+            logger.error(f"[EVALUATE-ALL] Session not found: {session_id} for user {current_user.id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Interview session not found"
+            )
+        
+        logger.info(f"[EVALUATE-ALL] Session found. Has {len(session_doc.get('responses', []))} responses")
+        
+        session = InterviewSession(**session_doc)
+        
+        # Find all unevaluated responses
+        unevaluated_responses = [r for r in session.responses if r.evaluation is None]
+        logger.info(f"[EVALUATE-ALL] Unevaluated responses: {len(unevaluated_responses)}")
+        
+        if not unevaluated_responses:
+            # All responses already evaluated
+            evaluated_count = len([r for r in session.responses if r.evaluation is not None])
+            logger.info(f"[EVALUATE-ALL] All {evaluated_count} responses already evaluated - returning early")
+            return {
+                "session_id": session_id,
+                "total_responses": len(session.responses),
+                "evaluated_count": evaluated_count,
+                "newly_evaluated": 0,
+                "message": "All responses already evaluated"
+            }
+        
+        # Get resume context if available
+        resume_context = ""
+        if session.resume_id:
+            resumes_collection = mongodb.get_collection("resume_documents")
+            try:
+                resume_doc = await resumes_collection.find_one({
+                    "_id": ObjectId(session.resume_id)
+                })
+                if resume_doc and "extracted_text" in resume_doc:
+                    resume_context = resume_doc["extracted_text"][:2000]
+                    logger.info(f"[EVALUATE-ALL] Resume context loaded: {len(resume_context)} chars")
+            except Exception as e:
+                logger.warning(f"[EVALUATE-ALL] Resume load failed: {str(e)}")
+        
+        # Get interview plan for question texts
+        question_texts = {}
+        
+        # PRIMARY: Load from interview_questions collection (most common)
+        interview_questions_collection = mongodb.get_collection("interview_questions")
+        question_ids = set(r.question_id for r in unevaluated_responses)
+        
+        for qid in question_ids:
+            try:
+                q_doc = await interview_questions_collection.find_one({"_id": ObjectId(qid)})
+                if q_doc:
+                    question_texts[qid] = q_doc.get("question_text", "")
+                    logger.info(f"[EVALUATE-ALL] Loaded question from interview_questions: {qid}")
+            except Exception as e:
+                logger.warning(f"[EVALUATE-ALL] Failed to load question {qid}: {str(e)}")
+        
+        # FALLBACK: Load from interview_plan if available (legacy path)
+        if not question_texts and session.interview_plan_id:
+            plan_collection = mongodb.get_collection("interview_plans")
+            try:
+                plan_doc = await plan_collection.find_one({
+                    "_id": ObjectId(session.interview_plan_id)
+                })
+                if plan_doc:
+                    plan = InterviewPlan(**plan_doc)
+                    for q in plan.questions:
+                        question_texts[q.question_id] = q.question_text
+                    logger.info(f"[EVALUATE-ALL] Loaded {len(question_texts)} questions from interview_plan")
+                else:
+                    logger.warning(f"[EVALUATE-ALL] Plan not found: {session.interview_plan_id}")
+            except Exception as e:
+                logger.warning(f"[EVALUATE-ALL] Plan load failed: {str(e)}")
+        
+        logger.info(f"[EVALUATE-ALL] Loaded {len(question_texts)} total questions")
+        
+        # Evaluate each unevaluated response
+        newly_evaluated = 0
+        response_evaluation_agent = ResponseEvaluationAgent()
+        
+        logger.info(f"[EVALUATE-ALL] Starting evaluation of {len(unevaluated_responses)} responses")
+        logger.info(f"[EVALUATE-ALL] ResponseEvaluationAgent model: {response_evaluation_agent.model_used}")
+        
+        for idx, response in enumerate(unevaluated_responses):
+            try:
+                logger.info(f"[EVALUATE-ALL] [{idx+1}/{len(unevaluated_responses)}] Evaluating response {response.response_id}")
+                
+                question_text = question_texts.get(response.question_id)
+                if not question_text:
+                    logger.warning(f"[EVALUATE-ALL] Question not found for response {response.response_id}, qid={response.question_id}")
+                    continue
+                
+                logger.info(f"[EVALUATE-ALL] Calling ResponseEvaluationAgent for {response.response_id}")
+                
+                # Call evaluation agent
+                evaluation = await response_evaluation_agent.evaluate_response(
+                    question_text=question_text,
+                    candidate_answer=response.answer,
+                    interview_type=session.interview_type.value,
+                    target_position=session.target_position,
+                    difficulty_level=session.difficulty_level.value,
+                    resume_context=resume_context
+                )
+                
+                if evaluation is None:
+                    logger.error(f"[EVALUATE-ALL] Agent returned None for response {response.response_id}")
+                    continue
+                
+                logger.info(f"[EVALUATE-ALL] Evaluation received for {response.response_id}: score={evaluation.get('overall_score')}/10")
+                
+                # Update MongoDB with evaluation
+                logger.info(f"[EVALUATE-ALL] Updating MongoDB for response {response.response_id}")
+                logger.info(f"[EVALUATE-ALL] Query: session_id={session_id}, response_id={response.response_id}")
+                
+                result = await sessions_collection.find_one_and_update(
+                    {
+                        "_id": ObjectId(session_id),
+                        "responses.response_id": response.response_id
+                    },
+                    {
+                        "$set": {
+                            "responses.$.evaluation": evaluation
+                        }
+                    }
+                )
+                
+                if result is None:
+                    logger.error(f"[EVALUATE-ALL] MongoDB update failed - no document matched for {response.response_id}")
+                    logger.error(f"[EVALUATE-ALL] This means query didn't find session_id={session_id} or response_id={response.response_id}")
+                else:
+                    logger.info(f"[EVALUATE-ALL] MongoDB update successful for {response.response_id}")
+                    newly_evaluated += 1
+                
+            except Exception as e:
+                logger.error(f"[EVALUATE-ALL] Exception evaluating response {response.response_id}: {str(e)}", exc_info=True)
+                continue
+        
+        # Verify persistence
+        logger.info(f"[EVALUATE-ALL] Verifying {newly_evaluated} evaluations were persisted")
+        updated_session = await sessions_collection.find_one({"_id": ObjectId(session_id)})
+        if updated_session:
+            evaluated_count = len([r for r in updated_session.get("responses", []) if r.get("evaluation") is not None])
+            logger.info(f"[EVALUATE-ALL] Verification: {evaluated_count} evaluations persisted out of {len(updated_session.get('responses', []))} total")
+        else:
+            logger.error(f"[EVALUATE-ALL] Could not fetch session for verification")
+            evaluated_count = newly_evaluated
+        
+        logger.info(f"[EVALUATE-ALL] COMPLETE - newly_evaluated={newly_evaluated}, total_evaluated={evaluated_count}")
+        
+        return {
+            "session_id": session_id,
+            "total_responses": len(session.responses),
+            "evaluated_count": evaluated_count,
+            "newly_evaluated": newly_evaluated,
+            "message": f"Evaluated {newly_evaluated} response(s)",
+            "debug_info": {
+                "unevaluated_count": len(unevaluated_responses),
+                "question_texts_loaded": len(question_texts),
+                "interview_plan_id": session.interview_plan_id
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[EVALUATE-ALL] Error batch evaluating responses: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to evaluate responses: {str(e)}"
+        )
+
+
+@router.post("/{session_id}/responses/{response_id}/evaluate")
+async def evaluate_response(
+    session_id: str,
+    response_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Evaluate a candidate's response to an interview question.
+    
+    This endpoint evaluates the specified response and stores the evaluation
+    in the interview session. Evaluation includes scores (0-10) across multiple
+    dimensions, identified strengths, weaknesses, and improvement suggestions.
+    
+    Args:
+        session_id: The interview session ID
+        response_id: The response ID to evaluate
+        current_user: The authenticated user
+        
+    Returns:
+        The evaluation data with scores and feedback
+    """
+    try:
+        # Get the session
+        sessions_collection = mongodb.get_collection("interview_sessions")
+        session_doc = await sessions_collection.find_one({
+            "_id": ObjectId(session_id),
+            "user_id": str(current_user.id)
+        })
+        
+        if not session_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Interview session not found"
+            )
+        
+        session = InterviewSession(**session_doc)
+        
+        # Find the response
+        response = None
+        for r in session.responses:
+            if r.response_id == response_id:
+                response = r
+                break
+        
+        if not response:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Response not found in session"
+            )
+        
+        # Skip if already evaluated
+        if response.evaluation is not None:
+            return response.evaluation
+        
+        # Find the question in the plan
+        question_text = None
+        if session.interview_plan_id:
+            plan_collection = mongodb.get_collection("interview_plans")
+            plan_doc = await plan_collection.find_one({
+                "_id": ObjectId(session.interview_plan_id)
+            })
+            if plan_doc:
+                plan = InterviewPlan(**plan_doc)
+                for q in plan.questions:
+                    if q.question_id == response.question_id:
+                        question_text = q.question_text
+                        break
+        
+        if not question_text:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not find question for evaluation"
+            )
+        
+        # Get resume context if available
+        resume_context = ""
+        if session.resume_id:
+            resumes_collection = mongodb.get_collection("resume_documents")
+            try:
+                resume_doc = await resumes_collection.find_one({
+                    "_id": ObjectId(session.resume_id)
+                })
+                if resume_doc and "extracted_text" in resume_doc:
+                    resume_context = resume_doc["extracted_text"][:2000]  # Truncate
+            except:
+                # Resume context is optional, don't fail if not found
+                pass
+        
+        # Evaluate the response using ResponseEvaluationAgent
+        response_evaluation_agent = ResponseEvaluationAgent()
+        evaluation = await response_evaluation_agent.evaluate_response(
+            question_text=question_text,
+            candidate_answer=response.answer,
+            interview_type=session.interview_type.value,
+            target_position=session.target_position,
+            difficulty_level=session.difficulty_level.value,
+            resume_context=resume_context
+        )
+        
+        if evaluation is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to evaluate response"
+            )
+        
+        # Store evaluation in MongoDB
+        result = await sessions_collection.find_one_and_update(
+            {
+                "_id": ObjectId(session_id),
+                "responses.response_id": response_id
+            },
+            {
+                "$set": {
+                    "responses.$.evaluation": evaluation
+                }
+            },
+            return_document=True
+        )
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to store evaluation"
+            )
+        
+        logger.info(f"Evaluated response {response_id} in session {session_id}")
+        
+        return evaluation
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Invalid session/response ID: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid session or response ID"
+        )
+    except Exception as e:
+        logger.error(f"Error evaluating response: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to evaluate response"
+        )
+
+
 @router.get("", response_model=InterviewHistoryResponse)
 async def get_interview_history(
     current_user: User = Depends(get_current_active_user)
@@ -1513,6 +2086,104 @@ async def get_interview_history(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch interview history"
+        )
+
+
+@router.delete("/{session_id}", response_model=dict)
+async def delete_interview(
+    session_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Delete an interview session and all associated data.
+    
+    This endpoint:
+    1. Verifies the interview belongs to the current user
+    2. Deletes the interview session
+    3. Deletes all associated interview questions
+    4. Deletes all associated evaluations
+    5. Deletes all associated skill assessments
+    6. Deletes all associated learning recommendations
+    7. Deletes all associated resume data linked to this interview
+    
+    Returns success message or error.
+    """
+    try:
+        sessions_collection = mongodb.get_collection("interview_sessions")
+        questions_collection = mongodb.get_collection("interview_questions")
+        evaluations_collection = mongodb.get_collection("evaluations")
+        skill_assessments_collection = mongodb.get_collection("skill_assessments")
+        learning_recommendations_collection = mongodb.get_collection("learning_recommendations")
+        
+        # Convert session_id to ObjectId
+        try:
+            session_obj_id = ObjectId(session_id)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid session ID format"
+            )
+        
+        # Fetch the session to verify ownership
+        session_doc = await sessions_collection.find_one({
+            "_id": session_obj_id,
+            "user_id": str(current_user.id)
+        })
+        
+        if not session_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Interview session not found or you don't have permission to delete it"
+            )
+        
+        # Delete associated data in order
+        # 1. Delete evaluations for this session
+        await evaluations_collection.delete_many({
+            "interview_session_id": session_id
+        })
+        
+        # 2. Delete skill assessments for this session
+        await skill_assessments_collection.delete_many({
+            "interview_session_id": session_id
+        })
+        
+        # 3. Delete learning recommendations for this session
+        await learning_recommendations_collection.delete_many({
+            "interview_session_id": session_id
+        })
+        
+        # 4. Delete interview questions for this session
+        await questions_collection.delete_many({
+            "interview_session_id": session_id
+        })
+        
+        # 5. Finally, delete the interview session itself
+        result = await sessions_collection.delete_one({
+            "_id": session_obj_id,
+            "user_id": str(current_user.id)
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete interview session"
+            )
+        
+        logger.info(f"Deleted interview session {session_id} for user {current_user.id}")
+        
+        return {
+            "success": True,
+            "message": "Interview deleted successfully",
+            "session_id": session_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting interview {session_id} for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete interview. Please try again."
         )
 
 
