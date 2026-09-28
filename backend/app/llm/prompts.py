@@ -140,24 +140,54 @@ class PromptLibrary:
             )
         )
         
-        # Interview Question Generation Placeholder
+        # Interview Question Generation - MUST produce valid JSON
         self.templates[PromptType.INTERVIEW_QUESTION_GENERATION] = PromptTemplate(
             name="Interview Question Generation",
             system_prompt=(
-                "You are an experienced interview conductor. Generate thoughtful, relevant "
-                "interview questions that assess skills, experience, and cultural fit."
+                "You are an experienced interview conductor and question writer. Generate personalized, "
+                "thoughtful, and technically accurate interview questions tailored to the candidate's resume, "
+                "experience, skills, and the position requirements. IMPORTANT: You MUST return ONLY valid JSON "
+                "that can be parsed. Do NOT include any text before or after the JSON. Generate questions that "
+                "are challenging, fair, and based on the candidate's actual background."
             ),
             user_prompt_template=(
-                "Generate {num_questions} interview questions for the following role:\n\n"
-                "Position: {position}\n"
-                "Experience Level: {experience_level}\n"
-                "Key Skills Required: {key_skills}\n\n"
-                "Question Type: {question_type}\n"
-                "Industry: {industry}\n\n"
-                "Please provide questions that are:\n"
-                "1. Relevant to the role\n"
-                "2. Behavioral or technical as appropriate\n"
-                "3. Open-ended to encourage detailed responses"
+                "Generate {num_questions} personalized interview questions. Return ONLY valid JSON (no additional text).\n\n"
+                "Candidate Resume Summary:\n{resume_summary}\n\n"
+                "Candidate Skills:\n{candidate_skills}\n\n"
+                "Candidate Work Experience:\n{candidate_experience}\n\n"
+                "Candidate Projects:\n{candidate_projects}\n\n"
+                "Interview Configuration:\n"
+                "- Interview Type: {interview_type}\n"
+                "- Difficulty Level: {difficulty_level}\n"
+                "- Target Position: {target_position}\n"
+                "- Target Company: {target_company}\n\n"
+                "Job Description (if provided):\n{job_description}\n\n"
+                "Requirements:\n"
+                "1. Questions MUST be based on the candidate's actual resume, skills, and experience\n"
+                "2. For technical interviews: ask about specific technologies, frameworks, databases, algorithms mentioned in resume\n"
+                "3. For behavioral interviews: ask about specific projects, team experiences, and challenges from their background\n"
+                "4. For system design: ask questions appropriate to their stated experience level\n"
+                "5. Questions should be progressively structured when appropriate\n"
+                "6. Avoid generic questions - make them specific to this candidate\n"
+                "7. If job description is provided, incorporate its requirements\n"
+                "8. {num_questions} must be exactly {num_questions} (no more, no less)\n\n"
+                "Return a JSON array with each question having:\n"
+                "[\n"
+                "  {{\n"
+                "    \"question_id\": \"q_1\",\n"
+                "    \"question_text\": \"specific, personalized question here\",\n"
+                "    \"question_type\": \"long_answer|behavioral|system_design|code|short_answer\",\n"
+                "    \"category\": \"category name\",\n"
+                "    \"difficulty\": \"{difficulty_level}\",\n"
+                "    \"skills_tested\": [\"skill1\", \"skill2\"],\n"
+                "    \"expected_concepts\": [\"concept1\", \"concept2\"],\n"
+                "    \"source\": \"resume|job_description|interview_type\",\n"
+                "    \"follow_up_possible\": true,\n"
+                "    \"order\": 1\n"
+                "  }}\n"
+                "]\n\n"
+                "CRITICAL: Return ONLY the JSON array, nothing else. Ensure all strings are properly escaped. "
+                "Each object must have all required fields. The array must contain exactly {num_questions} elements."
             )
         )
         

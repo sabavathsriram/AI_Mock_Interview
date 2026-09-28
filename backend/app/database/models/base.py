@@ -16,7 +16,10 @@ class PyObjectId(ObjectId):
         import pydantic_core
         return pydantic_core.core_schema.no_info_after_validator_function(
             cls.validate,
-            pydantic_core.core_schema.str_schema(),
+            pydantic_core.core_schema.union_schema([
+                pydantic_core.core_schema.str_schema(),
+                pydantic_core.core_schema.is_instance_schema(ObjectId),
+            ]),
             serialization=pydantic_core.core_schema.to_string_ser_schema(),
         )
     

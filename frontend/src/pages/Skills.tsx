@@ -1,32 +1,45 @@
-import React, { useState } from 'react'
-import { TrendingUp, TrendingDown, Minus, Lightbulb, ArrowRight, Filter, Download } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { TrendingUp, TrendingDown, Minus, Lightbulb, ArrowRight, Filter, Download, Loader, AlertCircle } from 'lucide-react'
 import { AppShell, AppShellContent } from '@/components/layout'
 import { Card, CardHeader, CardBody } from '@/components/Card'
 import { Button } from '@/components/common'
 import { Badge } from '@/components/Badge'
 import { Progress } from '@/components/Progress'
+import { interviewService, SkillAssessmentResponse } from '@/services/api'
 import './Skills.css'
 
 export const Skills: React.FC = () => {
+  const [searchParams] = useSearchParams()
+  const interviewId = searchParams.get('interview')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [skillAssessment, setSkillAssessment] = useState<SkillAssessmentResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const skills = [
-    { name: 'Data Structures', level: 'Advanced', confidence: 89, trend: 'improving', change: '+8%', lastAssessed: '2 days ago' },
-    { name: 'Algorithms', level: 'Advanced', confidence: 85, trend: 'stable', change: '0%', lastAssessed: '3 days ago' },
-    { name: 'System Design', level: 'Intermediate', confidence: 65, trend: 'declining', change: '-5%', lastAssessed: 'Today' },
-    { name: 'Python', level: 'Advanced', confidence: 92, trend: 'improving', change: '+3%', lastAssessed: '1 week ago' },
-    { name: 'JavaScript/TypeScript', level: 'Advanced', confidence: 88, trend: 'stable', change: '+1%', lastAssessed: '5 days ago' },
-    { name: 'React', level: 'Advanced', confidence: 86, trend: 'improving', change: '+4%', lastAssessed: '1 week ago' },
-    { name: 'Database Design', level: 'Intermediate', confidence: 72, trend: 'stable', change: '0%', lastAssessed: '2 weeks ago' },
-    { name: 'Communication', level: 'Intermediate', confidence: 76, trend: 'improving', change: '+6%', lastAssessed: '4 days ago' },
-  ]
+  useEffect(() => {
+    const fetchSkillAssessment = async () => {
+      if (!interviewId) {
+        setError('Interview ID not found. Please view this page from an interview result.')
+        setLoading(false)
+        return
+      }
 
-  const categories = [
-    { id: 'all', name: 'All Skills', count: 8 },
-    { id: 'technical', name: 'Technical', count: 5 },
-    { id: 'soft', name: 'Soft Skills', count: 3 },
-  ]
+      try {
+        setLoading(true)
+        const assessment = await interviewService.getSkillAssessment(interviewId)
+        setSkillAssessment(assessment)
+        setError(null)
+      } catch (err: any) {
+        console.error('Failed to fetch skill assessment:', err)
+        setError(err.message || 'Failed to load skill assessment')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSkillAssessment()
+  }, [interviewId])
 
   const getTrendIcon = (trend: string) => {
     if (trend === 'improving') return <TrendingUp size={16} className="skills-trend-icon up" />
@@ -34,10 +47,17 @@ export const Skills: React.FC = () => {
     return <Minus size={16} className="skills-trend-icon stable" />
   }
 
-  const getLevelBadgeVariant = (level: string): 'success' | 'warning' | 'error' => {
-    if (level === 'Advanced') return 'success'
-    if (level === 'Intermediate') return 'warning'
+  const getLevelBadgeVariant = (level: number): 'success' | 'warning' | 'error' => {
+    // level is 1-5 proficiency scale
+    if (level >= 4) return 'success'
+    if (level >= 3) return 'warning'
     return 'error'
+  }
+
+  const getLevelLabel = (level: number): string => {
+    if (level >= 4) return 'Advanced'
+    if (level >= 3) return 'Intermediate'
+    return 'Beginner'
   }
 
   const getTrendBadgeVariant = (trend: string): 'success' | 'warning' | 'error' => {
@@ -47,20 +67,79 @@ export const Skills: React.FC = () => {
   }
 
   const getConfidenceVariant = (confidence: number): 'success' | 'warning' | 'error' => {
-    if (confidence >= 80) return 'success'
-    if (confidence >= 60) return 'warning'
+    if (confidence >= 0.75) return 'success'
+    if (confidence >= 0.5) return 'warning'
     return 'error'
   }
 
-  const filteredSkills = skills
-  const averageConfidence = Math.round(filteredSkills.reduce((sum, s) => sum + s.confidence, 0) / filteredSkills.length)
+  const getProficiencyPercentage = (proficiency: number): number => {
+    // Convert 1-5 scale to 0-100 percentage
+    return (proficiency / 5) * 100
+  }
+
+  if (loading) {
+    return (
+      <AppShell
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Skill Analysis' },
+        ]}
+      >
+        <AppShellContent maxWidth="full">
+          <div className="skills-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <Loader size={32} className="animate-spin" />
+            <span style={{ marginLeft: '16px' }}>Loading skill assessment...</span>
+          </div>
+        </AppShellContent>
+      </AppShell>
+    )
+  }
+
+  if (error || !skillAssessment) {
+    return (
+      <AppShell
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Skill Analysis' },
+        ]}
+      >
+        <AppShellContent maxWidth="full">
+          <div className="skills-page">
+            <Card variant="default" padding="lg">
+              <CardBody>
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <AlertCircle size={48} style={{ color: 'var(--color-error-500)', marginBottom: '16px' }} />
+                  <h2>Unable to Load Skill Assessment</h2>
+                  <p>{error || 'No skill assessment data available'}</p>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        </AppShellContent>
+      </AppShell>
+    )
+  }
+
+  const categories = [
+    { id: 'all', name: 'All Skills', count: skillAssessment.skills.length },
+  ]
+
+  // Add categories from the assessment
+  Object.keys(skillAssessment.categories).forEach((cat) => {
+    categories.push({
+      id: cat.toLowerCase(),
+      name: cat,
+      count: skillAssessment.skills.filter(s => s.category === cat).length,
+    })
+  })
+
+  const filteredSkills = skillAssessment.skills
+  const averageConfidence = Math.round(
+    filteredSkills.reduce((sum, s) => sum + s.confidence_score, 0) / filteredSkills.length * 100
+  )
 
   return (
     <AppShell
-      isDarkMode={isDarkMode}
-      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      userName="Alex Morgan"
-      userEmail="alex@example.com"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Skill Analysis' },
@@ -93,16 +172,54 @@ export const Skills: React.FC = () => {
                   <span className="skills-stat-value">{filteredSkills.length}</span>
                 </div>
                 <div className="skills-overview-stat">
-                  <span className="skills-stat-label">Improving</span>
-                  <span className="skills-stat-value positive">{filteredSkills.filter(s => s.trend === 'improving').length}</span>
+                  <span className="skills-stat-label">Strongest Skills</span>
+                  <span className="skills-stat-value positive">{skillAssessment.strongest_skills.length}</span>
                 </div>
                 <div className="skills-overview-stat">
-                  <span className="skills-stat-label">Needs Work</span>
-                  <span className="skills-stat-value negative">{filteredSkills.filter(s => s.confidence < 70).length}</span>
+                  <span className="skills-stat-label">Areas to Improve</span>
+                  <span className="skills-stat-value negative">{skillAssessment.weakest_skills.length}</span>
                 </div>
               </div>
             </CardBody>
           </Card>
+
+          {/* Strongest Skills */}
+          {skillAssessment.strongest_skills.length > 0 && (
+            <Card variant="default" padding="lg">
+              <CardHeader>
+                <div className="skills-page-section-header">
+                  <TrendingUp size={20} />
+                  <h2>Your Strongest Skills</h2>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {skillAssessment.strongest_skills.map((skill) => (
+                    <Badge key={skill} variant="success" size="lg">{skill}</Badge>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Weakest Skills */}
+          {skillAssessment.weakest_skills.length > 0 && (
+            <Card variant="default" padding="lg">
+              <CardHeader>
+                <div className="skills-page-section-header">
+                  <AlertCircle size={20} />
+                  <h2>Areas to Improve</h2>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {skillAssessment.weakest_skills.map((skill) => (
+                    <Badge key={skill} variant="error" size="lg">{skill}</Badge>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          )}
 
           {/* Category Tabs */}
           <div className="skills-page-tabs">
@@ -125,22 +242,35 @@ export const Skills: React.FC = () => {
                 <CardBody>
                   <div className="skills-page-skill-header">
                     <div className="skills-page-skill-title">
-                      <h3>{skill.name}</h3>
-                      <Badge variant={getLevelBadgeVariant(skill.level)} size="sm">{skill.level}</Badge>
+                      <h3>{skill.skill_name}</h3>
+                      <Badge variant={getLevelBadgeVariant(skill.current_proficiency)} size="sm">
+                        {getLevelLabel(skill.current_proficiency)}
+                      </Badge>
                     </div>
                     <div className="skills-page-skill-trend">
                       {getTrendIcon(skill.trend)}
-                      <Badge variant={getTrendBadgeVariant(skill.trend)} size="sm">{skill.change}</Badge>
+                      <Badge variant={getTrendBadgeVariant(skill.trend)} size="sm">{skill.trend}</Badge>
                     </div>
                   </div>
 
                   <div className="skills-page-skill-confidence">
-                    <Progress value={skill.confidence} color={getConfidenceVariant(skill.confidence)} showPercent />
+                    <Progress 
+                      value={getProficiencyPercentage(skill.current_proficiency)} 
+                      color={getConfidenceVariant(skill.confidence_score)} 
+                      showPercent 
+                    />
                   </div>
 
                   <div className="skills-page-skill-meta">
-                    <span>Last assessed: {skill.lastAssessed}</span>
+                    <span>Category: {skill.category}</span>
+                    <span>Confidence: {Math.round(skill.confidence_score * 100)}%</span>
                   </div>
+
+                  {skill.evidence.length > 0 && (
+                    <div className="skills-page-skill-evidence">
+                      <small>Evidence: {skill.evidence.slice(0, 2).join(', ')}{skill.evidence.length > 2 ? ', ...' : ''}</small>
+                    </div>
+                  )}
 
                   <div className="skills-page-skill-actions">
                     <Button variant="ghost" size="sm" icon={<ArrowRight size={14} />} iconPosition="right">
@@ -152,57 +282,26 @@ export const Skills: React.FC = () => {
             ))}
           </div>
 
-          {/* Skill Development Path */}
-          <Card variant="default" padding="lg" className="skills-page-development">
-            <CardHeader>
-              <div className="skills-page-section-header">
-                <Lightbulb size={20} />
-                <h2>Recommended Learning Path</h2>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <div className="skills-page-recommendations">
-                <div className="skills-page-rec-card high">
-                  <div className="skills-page-rec-priority">
-                    <Badge variant="error">High Priority</Badge>
-                  </div>
-                  <h3>Master System Design</h3>
-                  <p>Your lowest-scoring area. System Design is critical for senior roles.</p>
-                  <div className="skills-page-rec-details">
-                    <span>⏱ 8-10 hours</span>
-                    <Badge variant="error" size="sm">Hard</Badge>
-                  </div>
-                  <Button variant="primary" size="sm">Start Learning</Button>
+          {/* Skill Gap Analysis */}
+          {skillAssessment.skill_gap_analysis.length > 0 && (
+            <Card variant="default" padding="lg" className="skills-page-development">
+              <CardHeader>
+                <div className="skills-page-section-header">
+                  <Lightbulb size={20} />
+                  <h2>Skill Gap Analysis</h2>
                 </div>
-
-                <div className="skills-page-rec-card medium">
-                  <div className="skills-page-rec-priority">
-                    <Badge variant="warning">Medium Priority</Badge>
-                  </div>
-                  <h3>Deepen Database Knowledge</h3>
-                  <p>Build on your intermediate skills with advanced database design patterns.</p>
-                  <div className="skills-page-rec-details">
-                    <span>⏱ 5-6 hours</span>
-                    <Badge variant="warning" size="sm">Medium</Badge>
-                  </div>
-                  <Button variant="secondary" size="sm">Learn More</Button>
-                </div>
-
-                <div className="skills-page-rec-card maintenance">
-                  <div className="skills-page-rec-priority">
-                    <Badge variant="neutral">Maintenance</Badge>
-                  </div>
-                  <h3>Keep Your Skills Sharp</h3>
-                  <p>Refresh advanced skills with weekly practice and coding challenges.</p>
-                  <div className="skills-page-rec-details">
-                    <span>⏱ 2-3 hours/week</span>
-                    <Badge variant="neutral" size="sm">Varies</Badge>
-                  </div>
-                  <Button variant="secondary" size="sm">View Challenges</Button>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+              </CardHeader>
+              <CardBody>
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                  {skillAssessment.skill_gap_analysis.slice(0, 3).map((gap, idx) => (
+                    <li key={idx} style={{ padding: '12px 0', borderBottom: idx < 2 ? '1px solid var(--color-border)' : 'none' }}>
+                      {gap}
+                    </li>
+                  ))}
+                </ul>
+              </CardBody>
+            </Card>
+          )}
         </div>
       </AppShellContent>
     </AppShell>

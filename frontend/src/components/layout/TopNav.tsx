@@ -1,15 +1,12 @@
 import React, { useState } from 'react'
 import { Menu, Moon, Sun, Bell, Search } from 'lucide-react'
 import { UserMenu } from './UserMenu'
+import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import './TopNav.css'
 
 interface TopNavProps {
   onMenuClick?: () => void
-  onToggleDarkMode?: () => void
-  isDarkMode?: boolean
-  userName?: string
-  userEmail?: string
-  onLogout?: () => void
   showSearch?: boolean
 }
 
@@ -19,14 +16,14 @@ interface TopNavProps {
  */
 export const TopNav: React.FC<TopNavProps> = ({
   onMenuClick,
-  onToggleDarkMode,
-  isDarkMode = false,
-  userName = 'Alex Morgan',
-  userEmail = 'alex@example.com',
-  onLogout,
   showSearch = true,
 }) => {
+  const { isDarkMode, toggleDarkMode } = useTheme()
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
+
+  const userName = user?.full_name || 'User'
+  const userEmail = user?.email || ''
 
   return (
     <header className="top-nav">
@@ -74,7 +71,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
         {/* Dark mode toggle */}
         <button
-          onClick={onToggleDarkMode}
+          onClick={toggleDarkMode}
           className="top-nav-icon-btn"
           aria-label="Toggle dark mode"
           title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -89,7 +86,6 @@ export const TopNav: React.FC<TopNavProps> = ({
         <UserMenu
           userName={userName}
           userEmail={userEmail}
-          onLogout={onLogout}
         />
       </div>
     </header>

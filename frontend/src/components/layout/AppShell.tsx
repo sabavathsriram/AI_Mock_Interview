@@ -15,11 +15,6 @@ interface AppShellProps {
   showBreadcrumbs?: boolean
   showTopNav?: boolean
   showSidebar?: boolean
-  isDarkMode?: boolean
-  onToggleDarkMode?: () => void
-  userName?: string
-  userEmail?: string
-  onLogout?: () => void
   className?: string
   contentClassName?: string
 }
@@ -40,11 +35,6 @@ export const AppShell: React.FC<AppShellProps> = ({
   showBreadcrumbs = true,
   showTopNav = true,
   showSidebar = true,
-  isDarkMode = false,
-  onToggleDarkMode,
-  userName = 'Alex Morgan',
-  userEmail = 'alex@example.com',
-  onLogout,
   className,
   contentClassName,
 }) => {
@@ -53,17 +43,11 @@ export const AppShell: React.FC<AppShellProps> = ({
   return (
     <div
       className={['app-shell', className].filter(Boolean).join(' ')}
-      data-theme={isDarkMode ? 'dark' : 'light'}
     >
       {/* Top Navigation - Sticky */}
       {showTopNav && (
         <TopNav
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-          onToggleDarkMode={onToggleDarkMode}
-          isDarkMode={isDarkMode}
-          userName={userName}
-          userEmail={userEmail}
-          onLogout={onLogout}
         />
       )}
 

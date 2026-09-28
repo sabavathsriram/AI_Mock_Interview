@@ -331,17 +331,205 @@
   }
 }
 
-@media (max-width: 640px) {
-  .learning-page {
-    padding: 16px;
-  }
+/* Empty State */
+.learning-empty {
+  margin-top: 32px;
+}
 
-  .learning-page-header-content h1 {
-    font-size: 24px;
-  }
+.learning-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  text-align: center;
+}
 
-  .learning-roadmap-title {
-    flex-direction: column;
-    align-items: flex-start;
+.learning-empty-content svg {
+  color: var(--color-neutral-300, #d1d5db);
+  margin-bottom: 16px;
+}
+
+.dark .learning-empty-content svg {
+  color: var(--color-neutral-600, #4b5563);
+}
+
+.learning-empty-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+  margin: 16px 0 8px 0;
+}
+
+.dark .learning-empty-content h3 {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.learning-empty-content p {
+  font-size: 14px;
+  color: var(--color-neutral-500, #6b7280);
+  margin: 0 0 16px 0;
+}
+
+.dark .learning-empty-content p {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+/* Recommendations Grid */
+.learning-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+@media (max-width: 1024px) {
+  .learning-recommendations-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
   }
+}
+
+@media (max-width: 768px) {
+  .learning-recommendations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.learning-rec-card {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  transition: all 200ms ease;
+  overflow: hidden;
+}
+
+.dark .learning-rec-card {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.learning-rec-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+  border-color: var(--color-primary-500, #4f46e5);
+}
+
+.dark .learning-rec-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.learning-rec-section {
+  margin-bottom: 20px;
+}
+
+.learning-rec-section h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-neutral-600, #4b5563);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0 0 12px 0;
+}
+
+.dark .learning-rec-section h4 {
+  color: var(--color-neutral-300, #d1d5db);
+}
+
+.learning-resources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.learning-resource-item {
+  padding: 12px;
+  background: var(--color-neutral-50, #f9fafb);
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.dark .learning-resource-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.learning-resource-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.learning-resource-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-neutral-900, #171717);
+}
+
+.dark .learning-resource-title {
+  color: var(--color-neutral-100, #f3f4f6);
+}
+
+.learning-resource-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.learning-resource-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--color-neutral-500, #6b7280);
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.dark .learning-resource-meta {
+  color: var(--color-neutral-400, #9ca3af);
+}
+
+.learning-resource-link {
+  text-decoration: none;
+}
+
+.learning-resource-link button {
+  width: 100%;
+}
+
+.learning-rec-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.dark .learning-rec-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.learning-rec-footer small {
+  display: block;
+  font-size: 11px;
+  color: var(--color-neutral-400, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dark .learning-rec-footer small {
+  color: var(--color-neutral-500, #6b7280);
+}
+
+.learning-rec-footer strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-neutral-900, #171717);
+}
+
+.dark .learning-rec-footer strong {
+  color: var(--color-neutral-100, #f3f4f6);
 }

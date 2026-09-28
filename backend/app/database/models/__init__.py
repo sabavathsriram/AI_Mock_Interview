@@ -6,6 +6,17 @@ from .base import BaseDBModel, PyObjectId
 from .user import User, UserRole
 from .resume import Resume, Education, WorkExperience, Skill
 from .resume_document import ResumeDocument
+from .resume_intelligence import (
+    CandidateProfile,
+    ContactInfo,
+    EducationEntry,
+    SkillsCategory,
+    ProjectEntry,
+    WorkExperienceEntry,
+    InternshipEntry,
+    CertificationEntry,
+    AchievementEntry,
+)
 from .interview_session import InterviewSession, InterviewStatus, InterviewType, DifficultyLevel
 from .interview_question import InterviewQuestion, QuestionType, QuestionDifficulty
 from .candidate_answer import CandidateAnswer, AnswerStatus
@@ -23,6 +34,15 @@ __all__ = [
     "WorkExperience", 
     "Skill",
     "ResumeDocument",
+    "CandidateProfile",
+    "ContactInfo",
+    "EducationEntry",
+    "SkillsCategory",
+    "ProjectEntry",
+    "WorkExperienceEntry",
+    "InternshipEntry",
+    "CertificationEntry",
+    "AchievementEntry",
     "InterviewSession",
     "InterviewStatus",
     "InterviewType",

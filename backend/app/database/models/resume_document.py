@@ -28,11 +28,23 @@ class ResumeDocument(BaseDBModel):
     
     # Processing information
     extraction_status: str = Field(
-        default="success",
-        pattern="^(pending|success|failed)$",
+        default="completed",
+        pattern="^(pending|completed|failed)$",
         description="Status of text extraction"
     )
     extraction_error: Optional[str] = Field(None, description="Error message if extraction failed")
+    
+    # Intelligence profile reference
+    intelligence_profile_id: Optional[str] = Field(
+        None,
+        description="Reference to candidate_profiles document ID"
+    )
+    intelligence_status: str = Field(
+        default="pending",
+        pattern="^(pending|analyzing|completed|failed)$",
+        description="Status of resume intelligence analysis"
+    )
+    intelligence_error: Optional[str] = Field(None, description="Error message if intelligence analysis failed")
     
     # Resume information
     is_primary: bool = Field(
@@ -47,6 +59,10 @@ class ResumeDocument(BaseDBModel):
     
     # Timestamps
     uploaded_at: datetime = Field(..., description="When the file was uploaded")
+    intelligence_analyzed_at: Optional[datetime] = Field(
+        None,
+        description="When the resume intelligence was last analyzed"
+    )
     last_accessed_at: Optional[datetime] = Field(
         default=None,
         description="When the resume was last accessed"
@@ -64,9 +80,12 @@ class ResumeDocument(BaseDBModel):
                 "mime_type": "application/pdf",
                 "extracted_text": "John Doe\nSoftware Engineer\n...",
                 "extraction_metadata": {"page_count": 2, "processor": "PyPDF2"},
-                "extraction_status": "success",
+                "extraction_status": "completed",
+                "intelligence_profile_id": "507f1f77bcf86cd799439013",
+                "intelligence_status": "completed",
                 "is_primary": True,
                 "display_name": "Main Resume",
-                "uploaded_at": "2024-01-15T10:30:00Z"
+                "uploaded_at": "2024-01-15T10:30:00Z",
+                "intelligence_analyzed_at": "2024-01-15T10:35:00Z"
             }
         }

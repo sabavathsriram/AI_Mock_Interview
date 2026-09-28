@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -12,20 +12,116 @@ import {
   Target,
   BookOpen,
   Award,
+  Loader,
 } from 'lucide-react'
 import { AppShell, AppShellContent } from '@/components/layout'
 import { Card, CardHeader, CardBody } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { Progress } from '@/components/Progress'
+import { interviewService, EvaluationResponse } from '@/services/api'
 import './InterviewResults.css'
 
 export const InterviewResults: React.FC = () => {
   const { id } = useParams()
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
-  const overallScore = 78
-  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  useEffect(() => {
+    const fetchEvaluation = async () => {
+      if (!id) {
+        setError('Interview ID not found')
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const eval_data = await interviewService.getEvaluation(id)
+        setEvaluation(eval_data)
+        setError(null)
+      } catch (err: any) {
+        console.error('Failed to fetch evaluation:', err)
+        setError(err.message || 'Failed to load evaluation results')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvaluation()
+  }, [id])
+
+  if (loading) {
+    return (
+      <AppShell
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Interview History', href: '/interview-history' },
+          { label: 'Results' },
+        ]}
+      >
+        <AppShellContent maxWidth="full">
+          <div className="results-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <Loader size={32} className="animate-spin" />
+            <span style={{ marginLeft: '16px' }}>Loading evaluation results...</span>
+          </div>
+        </AppShellContent>
+      </AppShell>
+    )
+  }
+
+  if (error || !evaluation) {
+    return (
+      <AppShell
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Interview History', href: '/interview-history' },
+          { label: 'Results' },
+        ]}
+      >
+        <AppShellContent maxWidth="full">
+          <div className="results-container">
+            <Card variant="default" padding="lg">
+              <CardBody>
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <AlertCircle size={48} style={{ color: 'var(--color-error-500)', marginBottom: '16px' }} />
+                  <h2>Unable to Load Results</h2>
+                  <p>{error || 'No evaluation data available'}</p>
+                  <Link to="/interview-history">
+                    <Button variant="primary" style={{ marginTop: '16px' }}>
+                      Back to History
+                    </Button>
+                  </Link>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        </AppShellContent>
+      </AppShell>
+    )
+  }
+
+  const date = new Date(evaluation.created_at).toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+
+  const getScoreVariant = (score: number): 'success' | 'warning' | 'error' => {
+    if (score >= 75) return 'success'
+    if (score >= 60) return 'warning'
+    return 'error'
+  }
+
+  const getPerformanceRating = (score: number): string => {
+    if (score >= 85) return 'Outstanding'
+    if (score >= 75) return 'Excellent'
+    if (score >= 65) return 'Good'
+    if (score >= 50) return 'Satisfactory'
+    return 'Needs Improvement'
+  }
 
   const performanceByCategory = [
     { name: 'Technical Knowledge', score: 85, feedback: 'Excellent understanding of core concepts' },
@@ -60,18 +156,8 @@ export const InterviewResults: React.FC = () => {
     { title: 'Advanced Algorithms', time: '3 hours', difficulty: 'Hard', why: 'Deepen knowledge' },
   ]
 
-  const getScoreVariant = (score: number): 'success' | 'warning' | 'error' => {
-    if (score >= 75) return 'success'
-    if (score >= 60) return 'warning'
-    return 'error'
-  }
-
   return (
     <AppShell
-      isDarkMode={isDarkMode}
-      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      userName="Alex Morgan"
-      userEmail="alex@example.com"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Interview History', href: '/interview-history' },
@@ -96,7 +182,7 @@ export const InterviewResults: React.FC = () => {
           <div className="results-header">
             <div className="results-header-text">
               <h1>Interview Complete!</h1>
-              <p>Technical Interview • Hard • 45 minutes • {date}</p>
+              <p>Interview • {date}</p>
             </div>
             <Link to="/interview/setup">
               <Button variant="primary" icon={<RefreshCw size={18} />}>
@@ -124,27 +210,33 @@ export const InterviewResults: React.FC = () => {
                       r="90"
                       className="results-circle-progress"
                       style={{
-                        strokeDasharray: `${565.5 * (overallScore / 100)} 565.5`,
+                        strokeDasharray: `${565.5 * (evaluation.overall_score / 100)} 565.5`,
                       }}
                     />
                   </svg>
                   <div className="results-score-text">
-                    <span className="results-score-value">{overallScore}%</span>
+                    <span className="results-score-value">{Math.round(evaluation.overall_score)}%</span>
                     <span className="results-score-label">Overall Score</span>
                   </div>
                 </div>
                 <div className="results-score-details">
                   <div className="results-score-item">
                     <span>Performance</span>
-                    <Badge variant="success">Excellent</Badge>
+                    <Badge variant={evaluation.overall_score >= 75 ? 'success' : evaluation.overall_score >= 60 ? 'warning' : 'error'}>
+                      {getPerformanceRating(evaluation.overall_score)}
+                    </Badge>
                   </div>
                   <div className="results-score-item">
-                    <span>Percentile</span>
-                    <span className="results-score-item-value">Top 20%</span>
+                    <span>Technical Knowledge</span>
+                    <span className="results-score-item-value">{Math.round(evaluation.technical_knowledge_score)}%</span>
                   </div>
                   <div className="results-score-item">
-                    <span>Questions</span>
-                    <span className="results-score-item-value">4/4 Answered</span>
+                    <span>Communication</span>
+                    <span className="results-score-item-value">{Math.round(evaluation.communication_score)}%</span>
+                  </div>
+                  <div className="results-score-item">
+                    <span>Problem Solving</span>
+                    <span className="results-score-item-value">{Math.round(evaluation.problem_solving_score)}%</span>
                   </div>
                 </div>
               </div>
@@ -165,40 +257,14 @@ export const InterviewResults: React.FC = () => {
                 </CardHeader>
                 <CardBody>
                   <div className="results-performance-list">
-                    {performanceByCategory.map((cat, idx) => (
+                    {evaluation.categories.map((cat, idx) => (
                       <div key={idx} className="results-performance-item">
                         <div className="results-performance-header">
                           <span className="results-performance-name">{cat.name}</span>
-                          <Badge variant={getScoreVariant(cat.score)} size="sm">{cat.score}%</Badge>
+                          <Badge variant={getScoreVariant(cat.score)} size="sm">{Math.round(cat.score)}%</Badge>
                         </div>
                         <Progress value={cat.score} color={getScoreVariant(cat.score)} showPercent={false} />
                         <p className="results-performance-feedback">{cat.feedback}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-
-              {/* Question Breakdown */}
-              <Card variant="default" padding="lg">
-                <CardHeader>
-                  <h2>Question Breakdown</h2>
-                </CardHeader>
-                <CardBody>
-                  <div className="results-questions-list">
-                    {questions.map((q, idx) => (
-                      <div key={idx} className={`results-question-item ${q.status}`}>
-                        <div className="results-question-number">{q.num}</div>
-                        <div className="results-question-info">
-                          <p>{q.question}</p>
-                          <Badge 
-                            variant={q.status === 'excellent' ? 'success' : q.status === 'good' ? 'warning' : 'error'} 
-                            size="sm"
-                          >
-                            {q.status === 'excellent' ? 'Excellent' : q.status === 'good' ? 'Good' : 'Needs Improvement'}
-                          </Badge>
-                        </div>
-                        <Badge variant={getScoreVariant(q.score)} size="lg">{q.score}%</Badge>
                       </div>
                     ))}
                   </div>
@@ -218,7 +284,7 @@ export const InterviewResults: React.FC = () => {
                 </CardHeader>
                 <CardBody>
                   <ul className="results-insights-list">
-                    {strengths.map((strength, idx) => (
+                    {evaluation.strengths.map((strength, idx) => (
                       <li key={idx}>
                         <CheckCircle size={14} />
                         <span>{strength}</span>
@@ -238,7 +304,7 @@ export const InterviewResults: React.FC = () => {
                 </CardHeader>
                 <CardBody>
                   <ul className="results-insights-list improvements">
-                    {improvements.map((improvement, idx) => (
+                    {evaluation.improvement_areas.map((improvement, idx) => (
                       <li key={idx}>
                         <AlertCircle size={14} />
                         <span>{improvement}</span>
@@ -248,32 +314,16 @@ export const InterviewResults: React.FC = () => {
                 </CardBody>
               </Card>
 
-              {/* Next Steps */}
+              {/* Feedback */}
               <Card variant="default" padding="lg">
                 <CardHeader>
                   <div className="results-card-header">
                     <Lightbulb size={20} />
-                    <h2>Recommended Learning Path</h2>
+                    <h2>Overall Feedback</h2>
                   </div>
                 </CardHeader>
                 <CardBody>
-                  <div className="results-recommendations">
-                    {recommendations.map((rec, idx) => (
-                      <button key={idx} className="results-recommendation-item">
-                        <div className="results-rec-content">
-                          <h4>{rec.title}</h4>
-                          <div className="results-rec-meta">
-                            <span>{rec.time}</span>
-                            <Badge variant={rec.difficulty === 'Hard' ? 'error' : 'warning'} size="sm">
-                              {rec.difficulty}
-                            </Badge>
-                          </div>
-                          <p>{rec.why}</p>
-                        </div>
-                        <Target size={18} />
-                      </button>
-                    ))}
-                  </div>
+                  <p className="results-performance-feedback">{evaluation.overall_feedback}</p>
                 </CardBody>
               </Card>
             </div>
@@ -287,18 +337,18 @@ export const InterviewResults: React.FC = () => {
                   <Award size={32} />
                 </div>
                 <div className="results-footer-content">
-                  <h3>Great Progress!</h3>
-                  <p>You've improved 12% since your last interview. Keep practicing and you'll be ready for any interview!</p>
+                  <h3>Ready for Your Next Challenge?</h3>
+                  <p>Review your evaluation, check out your skill assessment, and start your learning path to improve.</p>
                 </div>
                 <div className="results-footer-actions">
-                  <Link to="/learning">
-                    <Button variant="secondary" icon={<BookOpen size={18} />}>
-                      View Learning Path
+                  <Link to={`/skills?interview=${id}`}>
+                    <Button variant="secondary" icon={<TrendingUp size={18} />}>
+                      View Skills
                     </Button>
                   </Link>
-                  <Link to="/interview/setup">
-                    <Button variant="primary" icon={<RefreshCw size={18} />}>
-                      Next Interview
+                  <Link to={`/learning?interview=${id}`}>
+                    <Button variant="primary" icon={<BookOpen size={18} />}>
+                      Learning Path
                     </Button>
                   </Link>
                 </div>

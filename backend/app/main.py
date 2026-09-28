@@ -17,13 +17,21 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup
     print("Starting up...")
-    await mongodb.connect()
+    try:
+        await mongodb.connect()
+        print("MongoDB connected successfully")
+    except Exception as e:
+        print(f"MongoDB connection failed: {e}")
+        print("Server will continue without MongoDB")
     
     yield
     
     # Shutdown
     print("Shutting down...")
-    await mongodb.disconnect()
+    try:
+        await mongodb.disconnect()
+    except Exception as e:
+        print(f"MongoDB disconnect error: {e}")
 
 
 app = FastAPI(
@@ -62,13 +70,14 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/")
 async def root():
     """Root endpoint providing API information."""
+    db_status = "connected" if mongodb.client else "disconnected"
     return {
         "message": "Welcome to AI-Powered Mock Interview API",
         "version": "0.1.0",
         "docs_url": "/docs",
         "redoc_url": "/redoc",
         "database": "MongoDB",
-        "database_status": "connected" if mongodb.client else "disconnected",
+        "database_status": db_status,
     }
 
 

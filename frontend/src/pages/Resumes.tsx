@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Upload,
@@ -17,7 +17,9 @@ import { Button } from '@/components/Button'
 import { Card, CardHeader, CardBody, CardFooter } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { Progress } from '@/components/Progress'
-import { mockResumes } from '@/data/mockData'
+import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
+import { resumeService, type ResumeDetailResponse } from '@/services/api'
 import './Resumes.css'
 
 type UploadStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'error'
@@ -34,10 +36,37 @@ const fileTypeIcons: Record<string, string> = {
 }
 
 export const Resumes: React.FC = () => {
-  const [uploads, setUploads] = useState<Record<string, UploadStatus>>({})
+  const { user, logout } = useAuth()
+  const { isDarkMode, toggleDarkMode } = useTheme()
+  
+  const [resumes, setResumes] = useState<ResumeDetailResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [uploads, setUploads] = useState<Record<string, { status: UploadStatus; error?: string; progress: number }>>({})
   const [dragActive, setDragActive] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const resumes = mockResumes
+  const [uploadingFileId, setUploadingFileId] = useState<string | null>(null)
+
+  const userName = user?.full_name || 'User'
+  const userEmail = user?.email || ''
+
+  // Fetch resumes from backend
+  const fetchResumes = async () => {
+    try {
+      setLoading(true)
+      const response = await resumeService.listResumes()
+      if (response.data.resumes) {
+        setResumes(response.data.resumes)
+      }
+    } catch (error) {
+      console.error('Error fetching resumes:', error)
+      // Don't set empty array - keep existing resumes if fetch fails
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchResumes()
+  }, [])
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -56,26 +85,118 @@ export const Resumes: React.FC = () => {
     
     const files = e.dataTransfer.files
     if (files && files[0]) {
-      simulateUpload(files[0].name)
+      handleFileUpload(files[0])
     }
   }
 
-  const simulateUpload = (filename: string) => {
-    const id = `resume_${Date.now()}`
-    setUploads((prev) => ({ ...prev, [id]: 'uploading' }))
+  const handleFileUpload = async (file: File) => {
+    // Prevent duplicate uploads
+    if (uploadingFileId) {
+      console.warn('Upload already in progress')
+      return
+    }
+
+    const uploadId = `resume_${Date.now()}`
+    setUploadingFileId(uploadId)
+    setUploads((prev) => ({ 
+      ...prev, 
+      [uploadId]: { status: 'uploading', progress: 0, error: undefined }
+    }))
     
-    setTimeout(() => {
-      setUploads((prev) => ({ ...prev, [id]: 'processing' }))
-      setTimeout(() => {
-        setUploads((prev) => ({ ...prev, [id]: 'completed' }))
-      }, 2000)
-    }, 1500)
+    try {
+      // Validate file first
+      const validation = await resumeService.validateFile(file)
+      if (!validation.valid) {
+        setUploads((prev) => ({ 
+          ...prev, 
+          [uploadId]: { status: 'error', progress: 0, error: validation.error }
+        }))
+        setUploadingFileId(null)
+        return
+      }
+
+      // Upload the file with progress callback
+      const response = await resumeService.uploadResume(
+        file,
+        undefined,
+        false,
+        (progress) => {
+          // Update progress
+          setUploads((prev) => ({
+            ...prev,
+            [uploadId]: { 
+              status: 'uploading', 
+              progress: progress.percentage,
+              error: undefined
+            }
+          }))
+        }
+      )
+      
+      if (response.data) {
+        // Update upload status to processing
+        setUploads((prev) => ({ 
+          ...prev, 
+          [uploadId]: { status: 'processing', progress: 100, error: undefined }
+        }))
+        
+        // Wait a moment then mark as completed
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        setUploads((prev) => ({ 
+          ...prev, 
+          [uploadId]: { status: 'completed', progress: 100, error: undefined }
+        }))
+        
+        // Refresh resume list to show newly uploaded resume
+        await fetchResumes()
+        
+        // Remove upload status after 3 seconds
+        setTimeout(() => {
+          setUploads((prev) => {
+            const newUploads = { ...prev }
+            delete newUploads[uploadId]
+            return newUploads
+          })
+        }, 3000)
+      }
+    } catch (error: any) {
+      console.error('Upload failed:', error)
+      const errorMessage = error.message || 'Upload failed. Please try again.'
+      setUploads((prev) => ({ 
+        ...prev, 
+        [uploadId]: { status: 'error', progress: 0, error: errorMessage }
+      }))
+    } finally {
+      setUploadingFileId(null)
+    }
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files[0]) {
-      simulateUpload(files[0].name)
+      handleFileUpload(files[0])
+    }
+    // Reset input so selecting the same file again will trigger change event
+    e.target.value = ''
+  }
+
+  const handleDeleteResume = async (resumeId: string, resumeName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${resumeName}"?`)) {
+      return
+    }
+
+    try {
+      await resumeService.deleteResume(resumeId)
+      
+      // Refresh resume list
+      await fetchResumes()
+      
+      // Show success message (you can add a toast notification here)
+      console.log('Resume deleted successfully')
+    } catch (error: any) {
+      console.error('Delete failed:', error)
+      alert(`Failed to delete resume: ${error.message}`)
     }
   }
 
@@ -85,29 +206,26 @@ export const Resumes: React.FC = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     })
   }
 
-  const getUploadProgress = (status: UploadStatus): number => {
+  const getUploadStatusColor = (status: UploadStatus) => {
     switch (status) {
-      case 'uploading': return 50
-      case 'processing': return 75
-      case 'completed': return 100
-      default: return 0
+      case 'uploading': return 'primary'
+      case 'processing': return 'warning'
+      case 'completed': return 'success'
+      case 'error': return 'error'
+      default: return 'neutral'
     }
   }
 
   return (
     <AppShell
-      isDarkMode={isDarkMode}
-      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      userName="Alex Morgan"
-      userEmail="alex@example.com"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Resumes' },
@@ -123,11 +241,18 @@ export const Resumes: React.FC = () => {
           <label className="resumes-upload-btn">
             <input
               type="file"
+              id="file-input"
               accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.html,.md"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
+              disabled={loading}
             />
-            <Button variant="primary" size="lg" icon={<Plus size={20} />}>
+            <Button 
+              variant="primary" 
+              size="lg" 
+              icon={<Plus size={20} />}
+              onClick={() => document.getElementById('file-input')?.click()}
+            >
               Upload Resume
             </Button>
           </label>
@@ -155,18 +280,36 @@ export const Resumes: React.FC = () => {
             </div>
 
             {/* Upload Progress */}
-            {Object.entries(uploads).map(([id, status]) => (
+            {Object.entries(uploads).map(([id, uploadState]) => (
               <div key={id} className="resumes-upload-progress">
                 <div className="resumes-progress-header">
-                  <span>Uploading resume...</span>
-                  {status === 'uploading' && <Loader2 className="resumes-spinner" size={16} />}
-                  {status === 'processing' && <Badge variant="warning">Processing</Badge>}
-                  {status === 'completed' && <Badge variant="success">Completed</Badge>}
+                  <span>
+                    {uploadState.status === 'uploading' && `Uploading... ${uploadState.progress}%`}
+                    {uploadState.status === 'processing' && 'Processing resume...'}
+                    {uploadState.status === 'completed' && 'Upload completed'}
+                    {uploadState.status === 'error' && 'Upload failed'}
+                  </span>
+                  {uploadState.status === 'uploading' && <Loader2 className="resumes-spinner" size={16} />}
+                  {uploadState.status === 'processing' && <Badge variant="warning">Processing</Badge>}
+                  {uploadState.status === 'completed' && <Badge variant="success">Completed</Badge>}
+                  {uploadState.status === 'error' && <Badge variant="error">Failed</Badge>}
                 </div>
-                <Progress 
-                  value={getUploadProgress(status)} 
-                  color={status === 'completed' ? 'success' : 'primary'}
-                />
+                {uploadState.status !== 'error' ? (
+                  <Progress 
+                    value={uploadState.progress} 
+                    color={uploadState.status === 'completed' ? 'success' : 'primary'}
+                  />
+                ) : (
+                  <div style={{ 
+                    padding: '12px', 
+                    backgroundColor: 'var(--color-error-50, #fee2e2)', 
+                    borderRadius: '6px',
+                    color: 'var(--color-error-700, #b91c1c)',
+                    fontSize: '14px'
+                  }}>
+                    {uploadState.error}
+                  </div>
+                )}
               </div>
             ))}
           </CardBody>
@@ -187,28 +330,28 @@ export const Resumes: React.FC = () => {
                 key={resume.id} 
                 variant="elevated" 
                 padding="lg" 
-                className={resume.isPrimary ? 'resumes-card-primary' : ''}
+                className={resume.is_primary ? 'resumes-card-primary' : ''}
               >
                 <CardBody>
                   <div className="resumes-card-header">
                     <div className="resumes-file-info">
-                      <span className="resumes-file-icon">{fileTypeIcons[resume.fileType] || '📄'}</span>
+                      <span className="resumes-file-icon">{fileTypeIcons[resume.file_type] || '📄'}</span>
                       <div>
                         <h3>{resume.filename}</h3>
-                        <p>{formatFileSize(resume.fileSize)} • {formatDate(resume.uploadedDate)}</p>
+                        <p>{formatFileSize(resume.file_size)} • {formatDate(resume.uploaded_at)}</p>
                       </div>
                     </div>
-                    {resume.isPrimary && <Badge variant="primary">Primary</Badge>}
+                    {resume.is_primary && <Badge variant="primary">Primary</Badge>}
                   </div>
 
                   {/* Status Badges */}
                   <div className="resumes-status-badges">
-                    <Badge variant={resume.processingStatus === 'completed' ? 'success' : 'warning'}>
-                      {resume.processingStatus === 'completed' ? <Check size={12} /> : <Clock size={12} />}
-                      Processing: {resume.processingStatus}
-                    </Badge>
-                    <Badge variant={resume.analysisStatus === 'completed' ? 'success' : 'neutral'}>
-                      Analysis: {resume.analysisStatus}
+                    <Badge variant={resume.extraction_status === 'completed' ? 'success' : resume.extraction_status === 'failed' ? 'error' : 'warning'}>
+                      {resume.extraction_status === 'completed' ? <Check size={12} /> : <Clock size={12} />}
+                      {resume.extraction_status === 'completed' && '✓ Extracted'}
+                      {resume.extraction_status === 'pending' && 'Processing...'}
+                      {resume.extraction_status === 'failed' && 'Extraction Failed'}
+                      {!resume.extraction_status && 'Unknown'}
                     </Badge>
                   </div>
 
@@ -219,7 +362,12 @@ export const Resumes: React.FC = () => {
                         View Analysis
                       </Button>
                     </Link>
-                    <Button variant="ghost" size="sm" icon={<Trash2 size={16} />}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      icon={<Trash2 size={16} />}
+                      onClick={() => handleDeleteResume(resume.id, resume.filename)}
+                    >
                       Delete
                     </Button>
                   </div>
@@ -228,18 +376,6 @@ export const Resumes: React.FC = () => {
             ))}
           </div>
         )}
-
-        {/* Demo Notice */}
-        <div className="resumes-demo-notice">
-          <AlertCircle size={20} />
-          <div>
-            <p className="resumes-notice-title">Demo Data Notice</p>
-            <p className="resumes-notice-text">
-              This page shows mock resumes for demonstration. Upload functionality is simulated.
-              Real file upload will be connected to backend API.
-            </p>
-          </div>
-        </div>
       </AppShellContent>
     </AppShell>
   )

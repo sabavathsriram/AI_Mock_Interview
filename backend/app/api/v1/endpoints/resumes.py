@@ -11,13 +11,15 @@ from fastapi.responses import FileResponse
 from app.auth.dependencies.auth import get_current_active_user
 from app.auth.models.user import UserWithPassword as User
 from app.services.resume_service import ResumeService
+from app.services.resume_intelligence_agent import ResumeIntelligenceAgent
 from app.api.v1.schemas.resume import (
     ResumeUploadResponse,
     ResumeDetailResponse,
     ResumeListResponse,
     ResumeDeleteResponse,
     FileSupportInfo,
-    ErrorResponse
+    ErrorResponse,
+    ResumeIntelligenceResponse
 )
 from app.documents import DocumentProcessorRegistry
 from app.core.config import settings
@@ -181,6 +183,7 @@ async def list_resumes(
                 extraction_status=resume.get('extraction_status', 'unknown'),
                 extraction_error=resume.get('extraction_error'),
                 extraction_metadata=resume.get('extraction_metadata', {}),
+                extracted_text=resume.get('extracted_text'),
                 uploaded_at=resume['uploaded_at'],
                 last_accessed_at=resume.get('last_accessed_at')
             )
@@ -233,6 +236,7 @@ async def get_resume(
             extraction_status=resume.get('extraction_status', 'unknown'),
             extraction_error=resume.get('extraction_error'),
             extraction_metadata=resume.get('extraction_metadata', {}),
+            extracted_text=resume.get('extracted_text'),
             uploaded_at=resume['uploaded_at'],
             last_accessed_at=resume.get('last_accessed_at')
         )
@@ -340,3 +344,184 @@ async def get_supported_formats() -> FileSupportInfo:
         max_file_size_mb=max_size_mb,
         max_file_size_bytes=max_size
     )
+
+
+@router.post("/{resume_id}/analyze", response_model=ResumeIntelligenceResponse)
+async def analyze_resume(
+    resume_id: str,
+    current_user: User = Depends(get_current_active_user)
+) -> ResumeIntelligenceResponse:
+    """
+    Trigger resume intelligence analysis to extract structured candidate profile.
+    
+    This endpoint will analyze the resume using an LLM and extract:
+    - Candidate name, contact info
+    - Education and certifications
+    - Skills (organized by category)
+    - Work experience and internships
+    - Projects and achievements
+    - Other relevant information
+    
+    Args:
+        resume_id: ID of the resume to analyze
+        
+    Returns:
+        Structured candidate profile
+    """
+    try:
+        user_id = str(current_user.id)
+        
+        # Get resume document
+        resume = await ResumeService.get_resume_by_id(resume_id, user_id)
+        if not resume:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Resume not found"
+            )
+        
+        # Check extraction status
+        if resume.get("extraction_status") != "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Resume extraction not completed. Status: {resume.get('extraction_status')}"
+            )
+        
+        extracted_text = resume.get("extracted_text", "")
+        if not extracted_text or not extracted_text.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No extracted text available for analysis"
+            )
+        
+        # Update status to analyzing
+        await ResumeService.update_intelligence_status(resume_id, user_id, "analyzing")
+        
+        # Analyze resume using intelligence agent
+        success, profile, error_msg = await ResumeIntelligenceAgent.analyze_resume(
+            resume_id=resume_id,
+            user_id=user_id,
+            extracted_text=extracted_text
+        )
+        
+        if not success:
+            # Update status to failed
+            await ResumeService.update_intelligence_status(
+                resume_id, user_id, "failed", error_msg
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Resume analysis failed: {error_msg}"
+            )
+        
+        # Save profile to MongoDB
+        profile_id = await ResumeIntelligenceAgent.save_profile(profile)
+        if not profile_id:
+            await ResumeService.update_intelligence_status(
+                resume_id, user_id, "failed", "Failed to save profile"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to save candidate profile"
+            )
+        
+        # Link profile to resume
+        await ResumeService.link_intelligence_profile(resume_id, user_id, profile_id)
+        
+        return ResumeIntelligenceResponse(
+            resume_id=resume_id,
+            status="completed",
+            profile=profile.dict(),
+            llm_model_used=profile.llm_model_used,
+            analyzed_at=profile.created_at
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error analyzing resume: {str(e)}"
+        )
+
+
+@router.get("/{resume_id}/intelligence", response_model=ResumeIntelligenceResponse)
+async def get_resume_intelligence(
+    resume_id: str,
+    current_user: User = Depends(get_current_active_user)
+) -> ResumeIntelligenceResponse:
+    """
+    Retrieve the resume intelligence profile for a resume.
+    
+    If analysis is not yet complete, returns current status.
+    If analysis failed, returns error message.
+    
+    Args:
+        resume_id: ID of the resume
+        
+    Returns:
+        Resume intelligence profile or status
+    """
+    try:
+        user_id = str(current_user.id)
+        
+        # Get resume document
+        resume = await ResumeService.get_resume_by_id(resume_id, user_id)
+        if not resume:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Resume not found"
+            )
+        
+        intelligence_status = resume.get("intelligence_status", "pending")
+        
+        # If not yet analyzed, return status
+        if intelligence_status in ["pending", "analyzing"]:
+            return ResumeIntelligenceResponse(
+                resume_id=resume_id,
+                status=intelligence_status,
+                profile=None,
+                error=None
+            )
+        
+        # If failed, return error
+        if intelligence_status == "failed":
+            return ResumeIntelligenceResponse(
+                resume_id=resume_id,
+                status="failed",
+                profile=None,
+                error=resume.get("intelligence_error", "Analysis failed")
+            )
+        
+        # If completed, get profile
+        profile_id = resume.get("intelligence_profile_id")
+        if not profile_id:
+            return ResumeIntelligenceResponse(
+                resume_id=resume_id,
+                status="pending",
+                profile=None,
+                error=None
+            )
+        
+        # Retrieve profile from MongoDB
+        profile = await ResumeIntelligenceAgent.get_profile(resume_id, user_id)
+        if not profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Candidate profile not found"
+            )
+        
+        return ResumeIntelligenceResponse(
+            resume_id=resume_id,
+            status="completed",
+            profile=profile,
+            llm_model_used=profile.get("llm_model_used"),
+            analyzed_at=profile.get("created_at")
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving resume intelligence: {str(e)}"
+        )

@@ -4,6 +4,7 @@ Resume upload and processing service.
 
 import os
 import shutil
+import logging
 from datetime import datetime
 from typing import Optional, Tuple
 from pathlib import Path
@@ -13,6 +14,8 @@ from app.database.models import ResumeDocument
 from app.documents import DocumentProcessorRegistry
 from app.core.config import settings
 from bson import ObjectId
+
+logger = logging.getLogger(__name__)
 
 
 class ResumeService:
@@ -277,7 +280,7 @@ class ResumeService:
             mime_type=mime_type,
             extracted_text=extracted_text,
             extraction_metadata=extraction_metadata,
-            extraction_status="success",
+            extraction_status="completed",
             is_primary=is_primary,
             display_name=display_name or filename,
             uploaded_at=datetime.utcnow()
@@ -349,6 +352,94 @@ class ResumeService:
             return resume
         except Exception:
             return None
+    
+    @classmethod
+    async def link_intelligence_profile(
+        cls,
+        resume_id: str,
+        user_id: str,
+        profile_id: str
+    ) -> bool:
+        """
+        Link a candidate intelligence profile to a resume document.
+        
+        Args:
+            resume_id: Resume document ID
+            user_id: User ID
+            profile_id: Candidate profile ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        collection = mongodb.get_collection("resume_documents")
+        
+        try:
+            result = await collection.update_one(
+                {
+                    "_id": ObjectId(resume_id),
+                    "user_id": user_id
+                },
+                {
+                    "$set": {
+                        "intelligence_profile_id": profile_id,
+                        "intelligence_status": "completed",
+                        "intelligence_analyzed_at": datetime.utcnow()
+                    }
+                }
+            )
+            
+            return result.modified_count > 0
+        
+        except Exception as e:
+            logger.error(f"Failed to link intelligence profile: {str(e)}")
+            return False
+    
+    @classmethod
+    async def update_intelligence_status(
+        cls,
+        resume_id: str,
+        user_id: str,
+        status: str,
+        error_message: Optional[str] = None
+    ) -> bool:
+        """
+        Update intelligence analysis status on resume document.
+        
+        Args:
+            resume_id: Resume document ID
+            user_id: User ID
+            status: New status (pending, analyzing, completed, failed)
+            error_message: Error message if failed
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        collection = mongodb.get_collection("resume_documents")
+        
+        try:
+            update_data = {
+                "intelligence_status": status
+            }
+            
+            if error_message:
+                update_data["intelligence_error"] = error_message
+            
+            if status == "completed":
+                update_data["intelligence_analyzed_at"] = datetime.utcnow()
+            
+            result = await collection.update_one(
+                {
+                    "_id": ObjectId(resume_id),
+                    "user_id": user_id
+                },
+                {"$set": update_data}
+            )
+            
+            return result.modified_count > 0
+        
+        except Exception as e:
+            logger.error(f"Failed to update intelligence status: {str(e)}")
+            return False
     
     @classmethod
     async def delete_resume(cls, resume_id: str, user_id: str) -> bool:

@@ -15,7 +15,8 @@ import { AppShell, AppShellContent } from '@/components/layout'
 import { Card, CardBody, CardHeader } from '@/components/Card'
 import { Button } from '@/components/common'
 import { Input } from '@/components/common'
-import { mockCurrentUser } from '@/data/mockData'
+import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import './Settings.css'
 
 const tabs = [
@@ -27,14 +28,15 @@ const tabs = [
 ]
 
 export const Settings: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { user } = useAuth()
+  const { isDarkMode, toggleDarkMode } = useTheme()
   const [activeTab, setActiveTab] = useState('account')
   const [settings, setSettings] = useState({
-    name: mockCurrentUser.name,
-    email: mockCurrentUser.email,
-    targetRole: mockCurrentUser.targetRole,
-    experienceLevel: mockCurrentUser.experienceLevel,
-    preferredInterviewType: mockCurrentUser.preferredInterviewType,
+    name: user?.full_name || '',
+    email: user?.email || '',
+    targetRole: '',
+    experienceLevel: '',
+    preferredInterviewType: '',
     emailNotifications: true,
     pushNotifications: false,
     weeklyDigest: true,
@@ -57,10 +59,6 @@ export const Settings: React.FC = () => {
 
   return (
     <AppShell
-      isDarkMode={isDarkMode}
-      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      userName="Alex Morgan"
-      userEmail="alex@example.com"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Settings' },
@@ -168,7 +166,7 @@ export const Settings: React.FC = () => {
                         <p className="settings-toggle-description">Use dark theme for the interface</p>
                       </div>
                       <button
-                        onClick={() => setIsDarkMode(!isDarkMode)}
+                        onClick={toggleDarkMode}
                         className={`settings-toggle ${isDarkMode ? 'active' : ''}`}
                       >
                         {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}

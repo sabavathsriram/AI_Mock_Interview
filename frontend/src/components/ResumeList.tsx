@@ -196,10 +196,12 @@ export const ResumeList: React.FC<ResumeListProps> = ({
                           <span
                             className={`detail-value status status-${resume.extraction_status}`}
                           >
-                            {resume.extraction_status === "success"
-                              ? "✓ Success"
+                            {resume.extraction_status === "completed"
+                              ? "✓ Extracted"
                               : resume.extraction_status === "failed"
                               ? "✗ Failed"
+                              : resume.extraction_status === "pending"
+                              ? "⏳ Processing..."
                               : "⏳ Pending"}
                           </span>
                         </div>

@@ -2,7 +2,7 @@
 Resume upload and management schemas.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -49,6 +49,7 @@ class ResumeDetailResponse(BaseModel):
     extraction_status: str
     extraction_error: Optional[str] = None
     extraction_metadata: Dict[str, Any]
+    extracted_text: Optional[str] = None
     uploaded_at: datetime
     last_accessed_at: Optional[datetime] = None
     
@@ -63,7 +64,9 @@ class ResumeDetailResponse(BaseModel):
                 "display_name": "Main Resume",
                 "is_primary": True,
                 "extraction_status": "success",
+                "extraction_error": None,
                 "extraction_metadata": {"page_count": 2, "processor": "PyPDF2"},
+                "extracted_text": "John Doe\nSoftware Engineer\n...",
                 "uploaded_at": "2024-01-15T10:30:00Z"
             }
         }
@@ -123,5 +126,39 @@ class ErrorResponse(BaseModel):
                 "error": "unsupported_file_type",
                 "detail": "Image files (JPG, JPEG) are not supported for resume upload",
                 "timestamp": "2024-01-15T10:30:00Z"
+            }
+        }
+
+
+class ResumeIntelligenceResponse(BaseModel):
+    """Resume intelligence profile response."""
+    
+    resume_id: str = Field(..., description="Resume document ID")
+    status: str = Field(..., description="Analysis status (pending, analyzing, completed, failed)")
+    profile: Optional[Dict[str, Any]] = Field(None, description="Structured candidate profile")
+    error: Optional[str] = Field(None, description="Error message if analysis failed")
+    llm_model_used: Optional[str] = Field(None, description="LLM model used for analysis")
+    analyzed_at: Optional[datetime] = Field(None, description="When analysis was completed")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "resume_id": "507f1f77bcf86cd799439012",
+                "status": "completed",
+                "profile": {
+                    "candidate_name": "John Doe",
+                    "contact": {
+                        "email": "john@example.com",
+                        "phone": "+1-234-567-8900",
+                        "location": "San Francisco, CA"
+                    },
+                    "skills": {
+                        "programming_languages": ["Python", "Java", "JavaScript"],
+                        "frameworks": ["Django", "React"],
+                        "databases": ["PostgreSQL", "MongoDB"]
+                    }
+                },
+                "llm_model_used": "gemini-1.5-flash",
+                "analyzed_at": "2024-01-15T10:35:00Z"
             }
         }

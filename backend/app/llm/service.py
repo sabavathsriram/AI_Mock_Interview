@@ -1,6 +1,6 @@
 """
 LLM Service Module
-Main service for interacting with LLM providers (Google Gemini)
+Main service for interacting with LLM providers (Groq with OpenAI-compatible API)
 Provides a provider-agnostic interface for the rest of the application
 """
 
@@ -9,13 +9,7 @@ import logging
 from typing import Any, Dict, Optional, Type
 from datetime import datetime
 
-import google.generativeai as genai
-from google.api_core.exceptions import (
-    GoogleAPICallError,
-    InvalidArgument,
-    DeadlineExceeded,
-    ResourceExhausted,
-)
+from openai import OpenAI, RateLimitError, APITimeoutError, APIError
 from pydantic import BaseModel, ValidationError
 
 from app.llm.config import llm_settings
@@ -72,7 +66,7 @@ class StructuredResponse(BaseModel):
 
 class LLMService:
     """
-    LLM Service for interacting with Google Gemini.
+    LLM Service for interacting with Groq (OpenAI-compatible API).
     
     This service provides a provider-agnostic interface that can be extended
     to support other LLM providers in the future.
@@ -81,24 +75,28 @@ class LLMService:
     def __init__(self):
         """Initialize LLM service."""
         self.configured = llm_settings.is_configured()
-        self.model_name = llm_settings.gemini_model
+        self.model_name = llm_settings.groq_model
+        self.client = None
         
         if self.configured:
             self._initialize_client()
         else:
             logger.warning(
-                "LLM service not configured. Set GEMINI_API_KEY environment variable."
+                "LLM service not configured. Set GROQ_API_KEY environment variable."
             )
     
     def _initialize_client(self):
-        """Initialize Gemini client."""
+        """Initialize Groq OpenAI-compatible client."""
         try:
-            genai.configure(api_key=llm_settings.gemini_api_key)
-            logger.info(f"Gemini client initialized with model: {self.model_name}")
+            self.client = OpenAI(
+                api_key=llm_settings.groq_api_key,
+                base_url="https://api.groq.com/openai/v1"
+            )
+            logger.info(f"Groq client initialized with model: {self.model_name}")
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {str(e)}")
+            logger.error(f"Failed to initialize Groq client: {str(e)}")
             raise LLMConfigurationError(
-                f"Failed to initialize Gemini client: {str(e)}"
+                f"Failed to initialize Groq client: {str(e)}"
             )
     
     def is_configured(self) -> bool:
@@ -113,7 +111,7 @@ class LLMService:
         system_prompt: Optional[str] = None,
     ) -> TextGenerationResponse:
         """
-        Generate text using the LLM.
+        Generate text using the LLM (Groq).
         
         Args:
             prompt: The user prompt
@@ -132,93 +130,80 @@ class LLMService:
         """
         if not self.configured:
             raise LLMConfigurationError(
-                "LLM service is not configured. Set GEMINI_API_KEY environment variable."
+                "LLM service is not configured. Set GROQ_API_KEY environment variable."
             )
         
         try:
             # Use provided values or defaults from config
-            temperature = temperature or llm_settings.gemini_temperature
-            max_output_tokens = max_output_tokens or llm_settings.gemini_max_output_tokens
+            temperature = temperature or llm_settings.groq_temperature
+            max_output_tokens = max_output_tokens or llm_settings.groq_max_output_tokens
             
-            # Log request (without sensitive info)
+            # Log request
             logger.info(
                 f"LLM text generation request - Model: {self.model_name}, "
                 f"Temperature: {temperature}, Max tokens: {max_output_tokens}"
             )
             
-            # Prepare generation config
-            generation_config = {
-                "temperature": temperature,
-                "max_output_tokens": max_output_tokens,
-            }
-            
-            # Prepare messages
+            # Build messages
             messages = []
             
             if system_prompt:
                 messages.append({
-                    "role": "user",
-                    "parts": [f"System: {system_prompt}"]
-                })
-                messages.append({
-                    "role": "model",
-                    "parts": ["Understood. I will follow the system instructions."]
+                    "role": "system",
+                    "content": system_prompt
                 })
             
             messages.append({
                 "role": "user",
-                "parts": [prompt]
+                "content": prompt
             })
             
-            # Get the model
-            model = genai.GenerativeModel(
-                model_name=self.model_name,
-                generation_config=generation_config,
+            # Call Groq API
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_output_tokens,
+                timeout=llm_settings.groq_request_timeout
             )
             
-            # Generate response
-            response = model.generate_content(
-                messages,
-                request_options={
-                    "timeout": llm_settings.gemini_request_timeout
-                }
-            )
-            
-            # Validate response
-            if not response or not response.text:
+            # Extract response text
+            if not response or not response.choices or not response.choices[0].message.content:
                 raise LLMResponseError("Empty response from LLM")
+            
+            response_text = response.choices[0].message.content
             
             logger.info(
                 f"LLM text generation successful - "
-                f"Response length: {len(response.text)} characters"
+                f"Response length: {len(response_text)} characters"
             )
             
             return TextGenerationResponse(
-                text=response.text,
+                text=response_text,
                 model=self.model_name,
                 timestamp=datetime.utcnow(),
-                tokens_used=None,  # Gemini API doesn't always provide token count
+                tokens_used=None,
             )
         
         except (LLMResponseError, LLMTimeoutError, LLMRateLimitError, LLMConfigurationError):
             # Re-raise our custom LLM exceptions as-is
             raise
         
-        except DeadlineExceeded as e:
+        except RateLimitError as e:
+            logger.error(f"Rate limit exceeded: {str(e)}")
+            raise LLMRateLimitError(
+                "The Groq API rate limit has been exceeded. Please try again in a few moments."
+            )
+        
+        except APITimeoutError as e:
             logger.error(f"LLM request timeout: {str(e)}")
             raise LLMTimeoutError(f"LLM request timed out: {str(e)}")
         
-        except ResourceExhausted as e:
-            logger.error(f"Rate limit exceeded: {str(e)}")
-            raise LLMRateLimitError(f"Rate limit exceeded: {str(e)}")
-        
-        except InvalidArgument as e:
-            logger.error(f"Invalid LLM request: {str(e)}")
-            raise LLMResponseError(f"Invalid LLM request: {str(e)}")
-        
-        except GoogleAPICallError as e:
-            logger.error(f"Gemini API error: {str(e)}")
-            raise LLMResponseError(f"Gemini API error: {str(e)}")
+        except APIError as e:
+            logger.error(f"Groq API error: {str(e)}")
+            if "rate limit" in str(e).lower() or "quota" in str(e).lower():
+                raise LLMRateLimitError(str(e))
+            raise LLMResponseError(f"Groq API error: {str(e)}")
         
         except Exception as e:
             logger.error(f"Unexpected LLM error: {str(e)}")
@@ -253,7 +238,7 @@ class LLMService:
         """
         if not self.configured:
             raise LLMConfigurationError(
-                "LLM service is not configured. Set GEMINI_API_KEY environment variable."
+                "LLM service is not configured. Set GROQ_API_KEY environment variable."
             )
         
         # Add JSON instruction to prompt

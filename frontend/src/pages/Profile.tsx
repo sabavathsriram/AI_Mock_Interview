@@ -21,7 +21,6 @@ import './Profile.css'
 
 export const Profile: React.FC = () => {
   const { user } = useAuth()
-  const [isDarkMode, setIsDarkMode] = useState(false)
 
   // Use the useApi hook for profile data
   const {
@@ -31,8 +30,14 @@ export const Profile: React.FC = () => {
     fetchData: fetchProfile,
   } = useApi(
     async () => {
-      const response = await userService.getUserProfile()
-      return response.data
+      try {
+        const response = await userService.getUserProfile()
+        return response.data
+      } catch (error) {
+        // Profile endpoint not yet implemented, this is expected
+        console.debug('Profile endpoint not available')
+        return null
+      }
     },
     { immediate: true }
   )
@@ -45,8 +50,14 @@ export const Profile: React.FC = () => {
     fetchData: fetchStats,
   } = useApi(
     async () => {
-      const response = await userService.getUserStats()
-      return response.data
+      try {
+        const response = await userService.getUserStats()
+        return response.data
+      } catch (error) {
+        // Stats endpoint not yet implemented, this is expected
+        console.debug('Stats endpoint not available')
+        return null
+      }
     },
     { immediate: true }
   )
@@ -63,10 +74,6 @@ export const Profile: React.FC = () => {
   if (isLoading) {
     return (
       <AppShell
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-        userName="Alex Morgan"
-        userEmail="alex@example.com"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Profile' },
@@ -85,10 +92,6 @@ export const Profile: React.FC = () => {
   if (error) {
     return (
       <AppShell
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-        userName="Alex Morgan"
-        userEmail="alex@example.com"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Profile' },
@@ -112,26 +115,22 @@ export const Profile: React.FC = () => {
 
   // Use real data or fallback to user context data
   const displayProfile = profileData || {
-    full_name: user?.full_name || 'Alex Morgan',
-    email: user?.email || 'alex@example.com',
-    job_title: 'Software Developer',
-    experience_years: 3,
-    preferred_interview_types: ['technical'],
-    skills: ['React', 'TypeScript', 'Node.js'],
+    full_name: user?.full_name || '',
+    email: user?.email || '',
+    job_title: '',
+    experience_years: 0,
+    preferred_interview_types: [],
+    skills: [],
   }
 
   const displayStats = statsData || {
-    total_interviews: 5,
-    average_score: 78,
-    best_score: 92,
+    total_interviews: 0,
+    average_score: 0,
+    best_score: 0,
   }
 
   return (
     <AppShell
-      isDarkMode={isDarkMode}
-      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      userName="Alex Morgan"
-      userEmail="alex@example.com"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Profile' },
@@ -243,13 +242,6 @@ export const Profile: React.FC = () => {
               </CardBody>
             </Card>
           </div>
-
-          {/* Demo Notice */}
-          <Card variant="default" padding="md" className="profile-demo-notice">
-            <CardBody>
-              <p>📊 <strong>Profile Data:</strong> Using mock data for demonstration purposes.</p>
-            </CardBody>
-          </Card>
         </div>
       </AppShellContent>
     </AppShell>

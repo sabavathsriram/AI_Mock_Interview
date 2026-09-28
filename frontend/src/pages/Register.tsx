@@ -104,7 +104,8 @@ export const Register: React.FC = () => {
       await register(formData.name, formData.email, formData.password)
       navigate('/dashboard')
     } catch (error) {
-      setErrors({ submit: 'Registration failed. Please try again.' })
+      console.error('Registration error:', error)
+      // Error is already set in AuthContext
     }
   }
 
@@ -294,10 +295,6 @@ export const Register: React.FC = () => {
             </Button>
           </form>
 
-          {/* Demo Notice */}
-          <div className="mt-6 p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700 rounded-lg text-sm text-primary-700 dark:text-primary-300">
-            💡 <strong>Demo:</strong> Fill in all fields to create a test account
-          </div>
         </div>
 
         {/* Login Link */}

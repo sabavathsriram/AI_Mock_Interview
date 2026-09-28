@@ -214,15 +214,17 @@ class RAGService:
         self,
         query: str,
         top_k: int = None,
-        similarity_threshold: float = None
+        similarity_threshold: float = None,
+        category_filter: Optional[str] = None
     ) -> RAGContext:
         """
-        Search the knowledge base.
+        Search the knowledge base with optional category filtering.
         
         Args:
             query: Search query
             top_k: Number of results
             similarity_threshold: Minimum similarity score
+            category_filter: Optional category to filter by
             
         Returns:
             RAGContext with retrieved documents
@@ -236,15 +238,33 @@ class RAGService:
             
             self.logger.debug(
                 f"Searching with query: '{query}' "
-                f"(top_k={top_k}, threshold={similarity_threshold})"
+                f"(top_k={top_k}, threshold={similarity_threshold}, category={category_filter})"
             )
+            
+            # Increase top_k if filtering to get enough results after filtering
+            search_top_k = top_k
+            if category_filter:
+                search_top_k = top_k * 3  # Get more results to filter
             
             # Search vector database
             search_results = self.vector_db.search(
                 query_text=query,
-                top_k=top_k,
+                top_k=search_top_k,
                 similarity_threshold=similarity_threshold
             )
+            
+            # Apply category filter if specified
+            if category_filter and rag_settings.enable_metadata_filtering:
+                search_results = [
+                    r for r in search_results 
+                    if r.metadata and r.metadata.get("category") == category_filter
+                ]
+                self.logger.debug(
+                    f"Applied category filter: {len(search_results)} results after filtering"
+                )
+            
+            # Limit to top_k after filtering
+            search_results = search_results[:top_k]
             
             # Convert to retrieved documents
             retrieved_docs = []
@@ -281,7 +301,8 @@ class RAGService:
             )
             
             self.logger.info(
-                f"Search completed: {len(retrieved_docs)} documents retrieved"
+                f"Search completed: {len(retrieved_docs)} documents retrieved "
+                f"(category_filter={category_filter})"
             )
             
             return context

@@ -13,6 +13,7 @@ import { Resumes } from '@/pages/Resumes'
 import { ResumeAnalysis } from '@/pages/ResumeAnalysis'
 import { InterviewSetup } from '@/pages/InterviewSetup'
 import { Interview } from '@/pages/Interview'
+import { InterviewQuestion } from '@/pages/InterviewQuestion'
 import { InterviewResults } from '@/pages/InterviewResults'
 import { Skills } from '@/pages/Skills'
 import { Learning } from '@/pages/Learning'
@@ -30,7 +31,12 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
-            <Router>
+            <Router 
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true
+              }}
+            >
               <div className="app">
                 <Routes>
                   {/* Public routes */}
@@ -44,6 +50,7 @@ function App() {
                   <Route path="/resumes/:id/analysis" element={<ProtectedRoute><ResumeAnalysis /></ProtectedRoute>} />
                   <Route path="/job-descriptions" element={<ProtectedRoute><JobDescriptions /></ProtectedRoute>} />
                   <Route path="/interview/setup" element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
+                  <Route path="/interview/:sessionId/question" element={<ProtectedRoute><InterviewQuestion /></ProtectedRoute>} />
                   <Route path="/interview/:id" element={<ProtectedRoute><Interview /></ProtectedRoute>} />
                   <Route path="/interview/:id/results" element={<ProtectedRoute><InterviewResults /></ProtectedRoute>} />
                   <Route path="/skills" element={<ProtectedRoute><Skills /></ProtectedRoute>} />

@@ -1,18 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogOut, Settings, User, ChevronDown } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/utils/cn'
 
 interface UserMenuProps {
   userName: string
   userEmail?: string
-  onLogout?: () => void
 }
 
-export const UserMenu: React.FC<UserMenuProps> = ({ userName, userEmail, onLogout }) => {
+export const UserMenu: React.FC<UserMenuProps> = ({ userName, userEmail }) => {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -30,9 +31,15 @@ export const UserMenu: React.FC<UserMenuProps> = ({ userName, userEmail, onLogou
     }
   }, [isOpen])
 
-  const handleLogout = () => {
-    onLogout?.()
-    navigate('/login')
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Still redirect even if logout fails
+      navigate('/login')
+    }
     setIsOpen(false)
   }
 

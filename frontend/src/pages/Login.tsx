@@ -27,8 +27,8 @@ export const Login: React.FC = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
     }
 
     setErrors(newErrors)
@@ -44,7 +44,9 @@ export const Login: React.FC = () => {
       await login(formData.email, formData.password)
       navigate('/dashboard')
     } catch (error) {
-      setErrors({ submit: 'Login failed. Please try again.' })
+      // Error is already set in AuthContext, don't override here
+      // Just log it for debugging
+      console.error('Login error:', error)
     }
   }
 
@@ -133,8 +135,6 @@ export const Login: React.FC = () => {
                 {errors.submit}
               </div>
             )}
-
-            {/* Submit Button */}
             <Button
               type="submit"
               variant="primary"
@@ -148,10 +148,6 @@ export const Login: React.FC = () => {
             </Button>
           </form>
 
-          {/* Demo Notice */}
-          <div className="mt-6 p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700 rounded-lg text-sm text-primary-700 dark:text-primary-300">
-            💡 <strong>Demo:</strong> Use any email and password (min 6 chars) to login
-          </div>
         </div>
 
         {/* Signup Link */}
